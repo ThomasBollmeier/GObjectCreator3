@@ -1,0 +1,24 @@
+<!-- Grammar of GObjectCreator3 -->
+
+enable full-backtracking;
+
+line-comment-style '//';
+block-comment-style '/*' '*/';
+
+literal LIT;
+word ID '[a-zA-Z_][a-zA-Z0-9_]*';
+
+separator LBRACE '{';
+separator RBRACE '}';
+
+@grammar
+gobjcreator = 
+	module* |
+	gobject*
+	;
+	
+module = 'module' name=ID LBRACE 
+	( module* | gobject* ) 
+	RBRACE;
+	
+gobject = 'gobject' name=ID LBRACE RBRACE;
