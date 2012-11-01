@@ -1,5 +1,139 @@
-module demo {
+include 
+	<core.goc3>, 
+	<util/runtime.goc3>,
+	"mytypes.goc3"
+	;
+	
+typedecl GError;
 
-	gobject Person { }
+module Gtk {
+
+	typedecl Label;
+	typedecl Button;
+
+}
+	
+ginterface Human 
+{ 
+	eat;
+	sleep;
+	talk
+		<- message: string;
+	walk
+		<- direction: integer;
+}
+
+module bio 
+{
+	module human 
+	{
+		ginterface Human 
+		{
+			think
+				<- about: any;
+		}
+	}
+}
+
+module company 
+{
+
+	ginterface Employee
+	{
+		get_id 
+			-> integer;
+		get_salary
+			-> double;
+		set_salary
+			<- salary: double;
+	} 
+
+}
+
+module demo 
+{
+
+	gerror Error { FAILURE, NOT_FOUND, INVALID	}
+	
+	genum Status 
+	{ 
+		WAITING [=100], 
+		RUNNING, 
+		PAUSED, 
+		STOPPED 
+	} 
+	
+	gflags Mode { READ, WRITE, EXECUTE } 
+
+	gobject Person 
+	{
+		implements ::Human, bio::human::Human;
+		
+		public methods 
+		{
+			do_something [abstract]
+				-> boolean;
+		}
+	}
+
+	gobject Worker
+	{
+		
+		inherits from Person; // <-- super class
+		
+		implements company::Employee; // <-- interface
+		
+		properties 
+		{
+		
+			last-name
+			{
+				access = initial-write
+			}
+			
+			full-name 
+			{
+				access = read-only,
+				description = "full name of worker"
+			}
+			
+		}
+		
+		signals 
+		{
+			contract-signed
+				<- employee: company::Employee
+				<- user_data: any;
+		}
+		
+		public methods 
+		{
+			create [static]
+				<- last_name: string
+				<- first_name: string
+				<- id: unsigned integer
+				<-> error: ref(ref(GError))
+				-> Worker;
+			do_something [overridden];
+			do_something_else 
+				<- what: integer
+				-> boolean;
+			get_team_members [static]
+				-> list(company::Employee);
+		} 
+		
+		private methods
+		{
+			do_something_secret;
+		}
+		
+		private attributes 
+		{
+			currentId: unsigned integer [static];
+			first_name: string;
+			last_name: string;
+		}
+	
+	}
 	
 }

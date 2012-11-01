@@ -5,20 +5,585 @@ enable full-backtracking;
 line-comment-style '//';
 block-comment-style '/*' '*/';
 
-literal LIT;
+literal LITERAL;
 word ID '[a-zA-Z_][a-zA-Z0-9_]*';
+word FILE_PATH '[^>]+';
+word UINT '[1-9][0-9]*|0';
 
+separator LRARROW '<->';
+separator LARROW '<-';
+separator RARROW '->';
+separator COLONCOLON '::';
+separator ASSIGN '=';
+separator COLON ':';
+separator SEMICOLON ';';
+separator COMMA ',';
+separator DASH '-';
+separator LSBRACKET '['; <!-- left square bracket -->
+separator RSBRACKET ']';
 separator LBRACE '{';
 separator RBRACE '}';
+separator LPAR '(';
+separator RPAR ')';
+separator LABRACKET '<'; <!-- left angle bracket -->
+separator RABRACKET '>';
+
+<!----------------------------------------------------------------------------->
 
 @grammar
-gobjcreator = 
-	module* |
-	gobject*
+gobjcreator = (
+	include_stmt |
+	module |
+	type_declaration |
+	gobject |
+	ginterface |
+	gerror |
+	genum |
+	gflags
+	)*
 	;
+% gobjcreator {
+res = AstNode('gobjcreator')
+
+for child in astNode.getChildren():
+	child.setId('')
+	res.addChild(child)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
 	
+include_stmt = 'include' name=inclpath (COMMA name=inclpath)* SEMICOLON;
+% include_stmt {
+res = AstNode('include')
+
+for path in astNode.getChildrenById('name'):
+	path.setId('')
+	res.addChild(path)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+inclpath = LITERAL | LABRACKET FILE_PATH RABRACKET;
+% inclpath {
+children = astNode.getChildren()
+if len(children) == 1:
+	text = children[0].getText()[1:-1]
+else:
+	text = children[1].getText()
+
+return AstNode(self.getName(), text)
+% }
+	
+<!----------------------------------------------------------------------------->
+
+type_declaration = 'typedecl' name=ID SEMICOLON;
+
+% type_declaration {
+
+return AstNode(self.getName(), astNode['#name'].getText())
+
+% } 
+
+<!----------------------------------------------------------------------------->
+
 module = 'module' name=ID LBRACE 
-	( module* | gobject* ) 
+	( 
+	module |
+	type_declaration | 
+	gobject |
+	ginterface |
+	gerror |
+	genum |
+	gflags
+	)* 
 	RBRACE;
+% module {
+res = AstNode('module')
+
+name = astNode['#name']
+res.addChild(AstNode('name', name.getText()))
+
+elements = [
+	'module',
+	'type_declaration',
+	'gobject',
+	'ginterface',
+	'gerror',
+	'genum',
+	'gflags'
+	]
+for child in astNode.getChildren():
+	if child.getName() in elements:
+		child.setId('')
+		res.addChild(child) 
+
+return res
+% }	
+
+<!----------------------------------------------------------------------------->
 	
-gobject = 'gobject' name=ID LBRACE RBRACE;
+gobject = 'gobject' name=ID LBRACE 
+	(
+	inherits_stmt |
+	implements_stmt |
+	properties |
+	signals |
+	method_section |
+	attr_section
+	)*
+	RBRACE;
+% gobject {
+res = AstNode(self.getName())
+
+res.addChild(AstNode('name', astNode['#name'].getText()))
+
+excluded_elements = ['token']
+for child in astNode.getChildren():
+	if child.getName() in excluded_elements:
+		continue
+	child.setId('')
+	res.addChild(child)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+ginterface = 'ginterface' name=ID LBRACE interface_method* RBRACE;
+% ginterface {
+res = AstNode(self.getName())
+		
+name = AstNode('name', astNode['#name'].getText())
+res.addChild(name)
+		
+for intfmethod in astNode.getChildrenByName('interface_method'):
+	intfmethod.setId('')
+	res.addChild(intfmethod)
+				
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+gerror = 'gerror' name=ID LBRACE 
+	code=ID (COMMA code=ID)*
+	RBRACE;
+% gerror {
+res = AstNode('gerror')
+
+name = astNode['#name']
+res.addChild(AstNode('name', name.getText()))
+
+for code in astNode.getChildrenById('code'):
+	res.addChild(AstNode('code', code.getText()))
+
+return res
+% }	
+
+<!----------------------------------------------------------------------------->
+	
+genum = 'genum' name=ID LBRACE
+	enum_code (COMMA enum_code)* 
+	RBRACE;
+% genum {
+res = AstNode('genum')
+
+name = astNode['#name']
+res.addChild(AstNode('name', name.getText()))
+
+for code in astNode.getChildrenByName('enum_code'):
+	code.setId('')
+	res.addChild(code)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+	
+enum_code = code=ID (LSBRACKET ASSIGN value=UINT RSBRACKET)?;
+% enum_code {
+res = AstNode('enum_code')
+
+name = AstNode('name', astNode['#code'].getText())
+res.addChild(name)
+
+val = astNode['#value']
+if val:
+	res.addChild(AstNode('value', val.getText()))
+	
+return res
+% } 	
+
+<!----------------------------------------------------------------------------->
+
+gflags = 'gflags' name=ID LBRACE 
+	code=ID (COMMA code=ID)*
+	RBRACE;
+% gflags {
+res = AstNode(self.getName())
+
+name = astNode['#name']
+res.addChild(AstNode('name', name.getText()))
+
+for code in astNode.getChildrenById('code'):
+	res.addChild(AstNode('code', code.getText()))
+
+return res
+% }	
+
+<!----------------------------------------------------------------------------->
+
+inherits_stmt = 'inherits' 'from' super_name=type_name SEMICOLON;
+% inherits_stmt {
+res = AstNode('super_class')
+
+super_type = astNode['#super_name']
+super_type.setId('')
+res.addChild(super_type)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+implements_stmt = 'implements' name=type_name (COMMA name=type_name)* SEMICOLON;
+% implements_stmt {
+res = AstNode('interfaces')
+
+for intf in astNode.getChildrenById('name'):
+	intf.setId('')
+	res.addChild(intf)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+full_type_name = root=COLONCOLON? (module=ID (COLONCOLON module=ID)* COLONCOLON)? name=ID;
+% full_type_name {
+res = AstNode(self.getName())
+
+if astNode['#root']:
+	res.addChild(AstNode('absolute_type'))
+
+for m in astNode.getChildrenById('module'):
+	res.addChild(AstNode('module', m.getText()))
+
+res.addChild(AstNode('name', astNode['#name'].getText()))	
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+properties = 'properties' LBRACE property* RBRACE;
+% properties {
+res = AstNode(self.getName())
+	
+for prop in astNode.getChildrenByName('property'):
+	prop.setId('')
+	res.addChild(prop)
+		
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+property = name=name_w_dashes LBRACE (content=prop_content (COMMA content=prop_content)*)? RBRACE;
+% property {
+res = AstNode(self.getName())
+	
+name = astNode.getChildById('name')
+name.setId('')
+res.addChild(name)
+		
+for content in astNode.getChildrenById('content'):
+	content.setId('')
+	res.addChild(content)
+		
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+name_w_dashes = ID (DASH ID)*;
+% name_w_dashes {
+text = ""
+for child in astNode.getChildren():
+	text += child.getText()
+return AstNode('name', text)
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_content = prop_access | prop_description;
+% prop_content {
+return astNode.getChildren()[0]
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_access = 'access' ASSIGN value=( 'read' DASH 'only' | 'read' DASH 'write' | 'initial' DASH 'write' );
+% prop_access {
+text = ""
+for child in astNode.getChildrenById('value'):
+	text += child.getText()
+	
+return AstNode('access', text)
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_description = 'description' ASSIGN value=LITERAL;
+% prop_description {
+value = astNode.getChildById('value')
+
+return AstNode('description', value.getText())
+% }
+
+<!----------------------------------------------------------------------------->
+
+signals = 'signals' LBRACE signal* RBRACE;
+% signals {
+res = AstNode(self.getName())
+
+for s in astNode.getChildrenByName('signal'):
+	s.setId('')
+	res.addChild(s)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+signal = name=name_w_dashes in_param* SEMICOLON;
+
+% signal {
+res = AstNode(self.getName())
+
+name=astNode['#name']
+name.setId('')
+res.addChild(name)
+
+for p in astNode.getChildrenByName('in_param'):
+	p.setId('')
+	res.addChild(p)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+method_section = visibility 'methods' LBRACE m=method* RBRACE;
+% method_section {
+res = AstNode(self.getName())
+
+res.addChild(astNode['visibility'])
+
+for method in astNode.getChildrenById('m'):
+	method.setId('')
+	res.addChild(method)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+attr_section = visibility 'attributes' LBRACE a=attribute* RBRACE;
+% attr_section {
+res = AstNode(self.getName())
+
+res.addChild(astNode['visibility'])
+
+for attr in astNode.getChildrenById('a'):
+	attr.setId('')
+	res.addChild(attr)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+interface_method = name=ID ( ( in_param | out_param )* )? SEMICOLON;
+% interface_method {
+res = AstNode(self.getName())
+
+for child in astNode.getChildren():
+	if child.getId() == 'name':
+		res.addChild(AstNode('name', child.getText()))
+	elif child.getName() != 'token':
+		res.addChild(child) 
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+visibility = 'public' | 'protected' | 'private';
+% visibility {
+return AstNode(self.getName(), astNode.getChildren()[0].getText())
+% }
+
+<!----------------------------------------------------------------------------->
+
+method = name=ID method_properties? ( in_param | inout_param | out_param )* SEMICOLON;
+% method {
+res = AstNode(self.getName())
+
+for child in astNode.getChildren():
+	if child.getId() == 'name':
+		res.addChild(AstNode('name', child.getText()))
+	elif child.getName() != 'token':
+		res.addChild(child) 
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+	
+attribute = name=ID COLON type=argtype attr_properties? SEMICOLON;
+% attribute {
+res = AstNode(self.getName())
+
+res.addChild(AstNode('name', astNode['#name'].getText()))
+
+type_ = astNode['#type']
+type_.setId('')
+res.addChild(type_)
+
+props = astNode['properties']
+if props:
+	res.addChild(props)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+	
+method_properties = LSBRACKET method_property (COMMA method_property)* RSBRACKET;
+% method_properties {
+res = AstNode('properties')
+
+for child in astNode.getChildren():
+	name = child.getName()
+	if name == 'token':
+		continue
+	res.addChild(child)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+in_param = LARROW name=ID COLON type=argtype;
+% in_param {
+res = AstNode(self.getName())
+res.addChild(AstNode('name', astNode['#name'].getText()))
+type_ = astNode['#type']
+type_.setId('')
+res.addChild(type_)
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+inout_param = LRARROW name=ID COLON type=argtype;
+% inout_param {
+res = AstNode(self.getName())
+res.addChild(AstNode('name', astNode['#name'].getText()))
+type_ = astNode['#type']
+type_.setId('')
+res.addChild(type_)
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+out_param = RARROW type=argtype;
+% out_param {
+res = AstNode(self.getName())
+type_ = astNode['#type']
+type_.setId('')
+res.addChild(type_)
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+attr_properties = LSBRACKET attr_property (COMMA attr_property)* RSBRACKET;
+% attr_properties {
+res = AstNode('properties')
+
+for child in astNode.getChildren():
+	name = child.getName()
+	if name == 'token':
+		continue
+	res.addChild(child)
+
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+method_property = 'static' | 'abstract' | 'overridden';
+% method_property {
+name = astNode.getChildren()[0].getText()
+
+return AstNode(name)
+% }
+
+<!----------------------------------------------------------------------------->
+
+attr_property = 'static';
+% attr_property {
+name = astNode.getChildren()[0].getText()
+
+return AstNode(name)
+% }
+
+<!----------------------------------------------------------------------------->
+
+argtype = ( 'ref' | 'list' ) LPAR argtype RPAR | type_name;
+% argtype {
+children = astNode.getChildren()
+
+if len(children) == 1:
+	return children[0]
+else:
+	res = AstNode(children[0].getText())
+	res.addChild(children[2])
+	return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+type_name = builtin_type | full_type_name;
+% type_name {
+return astNode.getChildren()[0]
+% }
+
+<!----------------------------------------------------------------------------->
+
+builtin_type = 
+	'string' | 
+	'boolean' |
+	'unsigned'? 'integer' |
+	'float' |
+	'double' |
+	'any'
+	;
+% builtin_type {
+typename=""
+for child in astNode.getChildren():
+	if typename:
+		typename += " "
+	typename += child.getText()
+
+return AstNode(self.getName(), typename)
+% }
+
+<!----------------------------------------------------------------------------->
