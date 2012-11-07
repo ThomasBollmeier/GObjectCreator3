@@ -60,11 +60,25 @@ class TestVisitor(AstVisitor):
         
         self._write("GType: %s" % self._absname(typename))
                 
-    def enter_gobject(self, name):
+    def enter_gobject(self, 
+                      name,
+                      super_class,
+                      interfaces
+                      ):
         
-        self._write("GObject: %s" % self._absname(name))
+        if not super_class:
+            self._write("GObject: %s" % self._absname(name))
+        else:
+            self._write("GObject: %s > %s" % (self._absname(name), super_class))
         self._indent()
-
+        
+        if interfaces:
+            self._write("Implements:")
+            self._indent()
+            for intf in interfaces:
+                self._write(intf)
+            self._dedent()
+                
     def exit_gobject(self):
         
         self._dedent()
@@ -105,7 +119,7 @@ class TestVisitor(AstVisitor):
             self._write(code)
         self._dedent()
 
-    def enter_method(self, name, attrs, parameters):
+    def visit_method(self, name, attrs, parameters):
 
         self._write("Method: %s" % name)
         self._indent()
@@ -122,6 +136,27 @@ class TestVisitor(AstVisitor):
                     self._write("%s (OUT)" % param.arg_type)
             self._dedent()
         self._dedent()
+        
+    def visit_interface_method(self, name, parameters):
+        
+        self._write("Method: %s" % name)
+        self._indent()
+        if parameters:
+            self._write("Parameters:")
+            self._indent()    
+            for param in parameters:
+                if param.category == Parameter.IN:
+                    self._write("%s: %s (IN)" % (param.name, param.arg_type))
+                elif param.category == Parameter.IN_OUT:
+                    self._write("%s: %s (INOUT)" % (param.name, param.arg_type))
+                elif param.category == Parameter.OUT:
+                    self._write("%s (OUT)" % param.arg_type)
+            self._dedent()
+        self._dedent()
+        
+    def visit_attribute(self, aname, atype, aattributes):
+        
+        self._write("Attribute: %s (%s) [%s]" % (aname, atype, aattributes))
                 
     def _absname(self, basename):
 
@@ -132,7 +167,7 @@ class TestVisitor(AstVisitor):
         
     def _write(self, text):
         
-        print(self._indent_level * " " + text)
+        print(self._indent_level * " " + str(text))
         
     def _indent(self):
         

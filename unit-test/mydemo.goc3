@@ -6,7 +6,8 @@ include
 	
 typedecl GError;
 
-module Gtk {
+module Gtk 
+{
 
 	typedecl Label;
 	typedecl Button;

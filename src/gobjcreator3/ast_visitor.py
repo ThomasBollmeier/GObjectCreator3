@@ -21,7 +21,11 @@ class AstVisitor(object):
     def visit_type_declaration(self, typename):
         pass
 
-    def enter_gobject(self, name):
+    def enter_gobject(self, 
+                      name,
+                      super_class,
+                      interfaces
+                      ):
         pass
     
     def exit_gobject(self):
@@ -42,9 +46,22 @@ class AstVisitor(object):
     def visit_gflags(self, name, codes):
         pass
     
-    def enter_method(self, 
+    def visit_method(self, 
                      name, 
                      attributes,
                      parameters 
                      ):
+        pass
+    
+    def visit_interface_method(self,
+                               name,
+                               parameters
+                               ):
+        pass
+    
+    def visit_attribute(self,
+                        aname,
+                        atype,
+                        aattributes
+                        ):
         pass

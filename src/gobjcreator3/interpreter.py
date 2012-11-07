@@ -17,7 +17,13 @@ class Interpreter(object):
         self._top = {"include": self._eval_include}
         self._top.update(self._module)
         
-        self._gobject = {"method_section": self._eval_method_section}
+        self._gobject = {"method_section": self._eval_method_section,
+                         "attr_section": self._eval_attr_section}
+
+        self._visi_map = {"public" : Visibility.PUBLIC,
+                          "protected": Visibility.PROTECTED,
+                          "private": Visibility.PRIVATE
+                          }
     
     def eval_grammar(self, ast, visitor):
         
@@ -58,7 +64,22 @@ class Interpreter(object):
         
         name = ast["name"].getText()
         
-        visitor.enter_gobject(name)
+        super_class_node = ast["super_class"]
+        if not super_class_node:
+            super_class = None
+        else:
+            super_class = self._eval_super_class(super_class_node)
+            
+        interfaces = []
+        
+        for intfsNode in ast.getChildrenByName("interfaces"):
+            for intfNode in intfsNode.getChildren():
+                if intfNode.getName() == "full_type_name":
+                    interfaces.append(self._eval_full_type_name(intfNode))
+                else:
+                    interfaces.append(Builtin(intfNode.getText()))
+        
+        visitor.enter_gobject(name, super_class, interfaces)
 
         for child in ast.getChildren():
             try:
@@ -68,13 +89,55 @@ class Interpreter(object):
         
         visitor.exit_gobject()
         
+    def _eval_super_class(self, super_class_node):
+        
+        super_type = super_class_node.getChildren()[0]
+        
+        if super_type.getName() == "full_type_name":
+            return self._eval_full_type_name(super_type)
+        else:
+            return BuiltIn(super_type.getText())
+        
     def _eval_ginterface(self, ast, visitor):
         
         name = ast["name"].getText()
         
         visitor.enter_ginterface(name)
         
-        visitor.exit_ginterface()        
+        for method in ast.getChildrenByName("interface_method"):
+            self._eval_interface_method(method, visitor)
+        
+        visitor.exit_ginterface()
+        
+    def _eval_interface_method(self, method, visitor):
+        
+        name = method['name'].getText()
+        
+        parameters = []
+        
+        for child in method.getChildren():
+            
+            catg_name = child.getName()
+            
+            if catg_name == "in_param":
+                category = Parameter.IN
+                pname = child["name"].getText()
+                argtype_node = child.getChildren()[1]
+            elif catg_name == "inout_param":
+                category = Parameter.IN_OUT
+                pname = child["name"].getText()
+                argtype_node = child.getChildren()[1]
+            elif catg_name == "out_param":
+                category = Parameter.OUT
+                pname = ""
+                argtype_node = child.getChildren()[0]
+            else:
+                continue
+            argtype = self._eval_arg_type(argtype_node)
+                        
+            parameters.append(Parameter(pname, argtype, category))
+            
+        visitor.visit_interface_method(name, parameters)
         
     def _eval_gerror(self, ast, visitor):
         
@@ -111,10 +174,7 @@ class Interpreter(object):
         
     def _eval_method_section(self, ast, visitor):
         
-        visibility = {"public" : Visibility.PUBLIC,
-                      "protected": Visibility.PROTECTED,
-                      "private": Visibility.PRIVATE
-                      }[ast["visibility"].getText()]
+        visibility = self._visi_map[ast["visibility"].getText()]
                 
         for method in ast.getChildrenByName("method"):
             name = method["name"].getText()
@@ -151,7 +211,29 @@ class Interpreter(object):
                         
             parameters.append(Parameter(pname, argtype, category))
         
-        visitor.enter_method(name, attributes, parameters)
+        visitor.visit_method(name, attributes, parameters)
+        
+    def _eval_attr_section(self, ast, visitor):
+        
+        visibility = self._visi_map[ast["visibility"].getText()]
+                
+        for attr in ast.getChildrenByName("attribute"):
+            name = attr["name"].getText()
+            self._eval_attribute(attr, visitor, name, visibility)
+            
+    def _eval_attribute(self, attr, visitor, name, visibility):
+        
+        props = attr["properties"]  
+        aattrs = {"visibility": visibility}
+        aattrs["scope"] = props and props["static"] and Scope.CLASS or Scope.INSTANCE
+        
+        type_node = attr.getChildren()[1]
+        if type_node.getName() == "builtin_type":
+            atype = BuiltIn(type_node.getText())
+        else:
+            atype = self._eval_full_type_name(type_node)
+        
+        visitor.visit_attribute(name, atype, aattrs)
         
     def _eval_arg_type(self, argtype_node):
         
