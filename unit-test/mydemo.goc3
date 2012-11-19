@@ -95,7 +95,7 @@ module demo
 			full-name 
 			{
 				access = read-only,
-				description = "full name of worker"
+				description = 'worker\'s name'
 			}
 			
 		}

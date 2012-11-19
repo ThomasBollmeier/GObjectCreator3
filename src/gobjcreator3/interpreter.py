@@ -1,6 +1,6 @@
 #from gobjcreator3.module import Module
 from gobjcreator3.parameter import Parameter, BuiltIn, FullTypeName, ListOf, RefTo
-from gobjcreator3.misc import Visibility, Scope
+from gobjcreator3.misc import Visibility, Scope, PropertyAccess
 
 class Interpreter(object):
     
@@ -18,12 +18,20 @@ class Interpreter(object):
         self._top.update(self._module)
         
         self._gobject = {"method_section": self._eval_method_section,
-                         "attr_section": self._eval_attr_section}
+                         "attr_section": self._eval_attr_section,
+                         "properties": self._eval_properties,
+                         "signals": self._eval_signals
+                         }
 
         self._visi_map = {"public" : Visibility.PUBLIC,
                           "protected": Visibility.PROTECTED,
                           "private": Visibility.PRIVATE
                           }
+        
+        self._prop_access_map = {"read-only": PropertyAccess.READ_ONLY,
+                                 "initial-write": PropertyAccess.INITIAL_WRITE,
+                                 "read-write": PropertyAccess.READ_WRITE
+                                 }
     
     def eval_grammar(self, ast, visitor):
         
@@ -77,7 +85,7 @@ class Interpreter(object):
                 if intfNode.getName() == "full_type_name":
                     interfaces.append(self._eval_full_type_name(intfNode))
                 else:
-                    interfaces.append(Builtin(intfNode.getText()))
+                    interfaces.append(BuiltIn(intfNode.getText()))
         
         visitor.enter_gobject(name, super_class, interfaces)
 
@@ -235,6 +243,32 @@ class Interpreter(object):
         
         visitor.visit_attribute(name, atype, aattrs)
         
+    def _eval_properties(self, ast, visitor):
+        
+        for propNode in ast.getChildren():
+            name = ""
+            attrs = {} 
+            for child in propNode.getChildren():
+                cname = child.getName()
+                if cname == "name":
+                    name = child.getText()
+                elif cname == "access":
+                    attrs["access"] = self._prop_access_map[child.getText()]
+                elif cname == "description":
+                    attrs["description"] = child.getText()
+            visitor.visit_property(name, attrs)
+            
+    def _eval_signals(self, ast, visitor):
+        
+        for signalNode in ast.getChildrenByName("signal"):
+            name = signalNode["name"].getText()
+            parameters = []
+            for paramNode in signalNode.getChildrenByName("in_param"):
+                pname = paramNode["name"].getText()
+                ptype = self._eval_arg_type(paramNode.getChildren()[1])
+                parameters.append(Parameter(pname, ptype, Parameter.IN))
+            visitor.visit_signal(name, parameters)
+                    
     def _eval_arg_type(self, argtype_node):
         
         name = argtype_node.getName()

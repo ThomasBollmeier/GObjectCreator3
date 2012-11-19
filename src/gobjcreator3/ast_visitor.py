@@ -65,3 +65,16 @@ class AstVisitor(object):
                         aattributes
                         ):
         pass
+    
+    def visit_property(self,
+                       name,
+                       attributes
+                       ):
+        
+        pass
+    
+    def visit_signal(self,
+                     name,
+                     parameters
+                     ):
+        pass

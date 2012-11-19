@@ -156,8 +156,24 @@ class TestVisitor(AstVisitor):
         
     def visit_attribute(self, aname, atype, aattributes):
         
-        self._write("Attribute: %s (%s) [%s]" % (aname, atype, aattributes))
-                
+        self._write("Attribute: %s (%s) %s" % (aname, atype, aattributes))
+        
+    def visit_property(self, name, attributes):
+        
+        self._write("Property: %s %s" % (name, attributes))
+        
+    def visit_signal(self, name, parameters):
+        
+        self._write("Signal: %s" % name)
+        self._indent()
+        if parameters:
+            self._write("Parameters:")
+            self._indent()    
+            for param in parameters:
+                self._write("%s: %s" % (param.name, param.arg_type))
+            self._dedent()
+        self._dedent()
+                            
     def _absname(self, basename):
 
         if not self._module_path:
