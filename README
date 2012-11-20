@@ -1,0 +1,2 @@
+GObjectCreator3 is a tool that helps in the development using the GOBJECT library. It provides a DSL for the definition of GObjects and generates GObject C files from the definition files.
+
