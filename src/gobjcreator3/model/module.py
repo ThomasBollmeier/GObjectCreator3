@@ -24,8 +24,6 @@ class Module(ModuleElement):
         
         ModuleElement.__init__(self, name)
         
-        self.name = name
-        
         self.modules = []
         self.types = []
         self.objects = []

@@ -24,15 +24,12 @@ ginterface Human
 		<- direction: integer;
 }
 
-module bio 
+module bio::human 
 {
-	module human 
+	ginterface Human 
 	{
-		ginterface Human 
-		{
-			think
-				<- about: any;
-		}
+		think
+			<- about: any;
 	}
 }
 

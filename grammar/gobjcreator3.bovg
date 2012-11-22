@@ -90,7 +90,7 @@ return AstNode(self.getName(), astNode['#name'].getText())
 
 <!----------------------------------------------------------------------------->
 
-module = 'module' name=ID LBRACE 
+module = 'module' module_name LBRACE 
 	( 
 	module |
 	type_declaration | 
@@ -101,11 +101,20 @@ module = 'module' name=ID LBRACE
 	gflags
 	)* 
 	RBRACE;
+	
 % module {
-res = AstNode('module')
 
-name = astNode['#name']
-res.addChild(AstNode('name', name.getText()))
+outer_module = None
+current_module = None
+
+module_name = astNode['module_name']
+for mname in module_name.getChildren():
+	current_module = AstNode('module')
+	current_module.addChild(AstNode('name', mname.getText()))
+	if not outer_module:
+		outer_module = current_module
+	else:
+		outer_module.addChild(current_module)
 
 elements = [
 	'module',
@@ -119,10 +128,26 @@ elements = [
 for child in astNode.getChildren():
 	if child.getName() in elements:
 		child.setId('')
-		res.addChild(child) 
+		current_module.addChild(child) 
+
+return outer_module
+
+% }	
+
+<!----------------------------------------------------------------------------->
+
+module_name = name=ID (COLONCOLON name=ID)*;
+
+% module_name {
+
+res = AstNode(self.getName())
+
+for child in astNode.getChildrenById('name'):
+	res.addChild(AstNode('part', child.getText()))
 
 return res
-% }	
+
+% }
 
 <!----------------------------------------------------------------------------->
 	

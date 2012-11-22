@@ -196,6 +196,59 @@ all_token_types.append(KEY_35)
 KEY_36 = token.Keyword('any', caseSensitive=True)
 all_token_types.append(KEY_36)
 
+class _ModuleNameRule(grammar.Rule):
+
+	def __init__(self, ident=''):
+	
+		grammar.Rule.__init__(self, 'module_name', ident)
+		
+	def expand(self, start, end, context):
+		
+		start.connect(self._sub_1()).connect(end)
+		
+	def transform(self, astNode):
+		
+		
+		res = AstNode(self.getName())
+		
+		for child in astNode.getChildrenById('name'):
+			res.addChild(AstNode('part', child.getText()))
+		
+		return res
+		
+		
+	def _sub_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_1())
+		elements.append(self._sub_1_2())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_1(self):
+		
+		return grammar.tokenNode(ID, 'name')
+		
+	def _sub_1_2(self):
+		
+		return grammar.zeroToMany(self._sub_1_2_1())
+		
+	def _sub_1_2_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_2_1_1())
+		elements.append(self._sub_1_2_1_2())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_2_1_1(self):
+		
+		return grammar.tokenNode(COLONCOLON)
+		
+	def _sub_1_2_1_2(self):
+		
+		return grammar.tokenNode(ID, 'name')
+		
 class _AttrPropertyRule(grammar.Rule):
 
 	def __init__(self, ident=''):
@@ -2301,10 +2354,18 @@ class _ModuleRule(grammar.Rule):
 		
 	def transform(self, astNode):
 		
-		res = AstNode('module')
 		
-		name = astNode['#name']
-		res.addChild(AstNode('name', name.getText()))
+		outer_module = None
+		current_module = None
+		
+		module_name = astNode['module_name']
+		for mname in module_name.getChildren():
+			current_module = AstNode('module')
+			current_module.addChild(AstNode('name', mname.getText()))
+			if not outer_module:
+				outer_module = current_module
+			else:
+				outer_module.addChild(current_module)
 		
 		elements = [
 			'module',
@@ -2318,9 +2379,10 @@ class _ModuleRule(grammar.Rule):
 		for child in astNode.getChildren():
 			if child.getName() in elements:
 				child.setId('')
-				res.addChild(child)
+				current_module.addChild(child)
 		
-		return res
+		return outer_module
+		
 		
 	def _sub_1(self):
 		
@@ -2339,7 +2401,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_2(self):
 		
-		return grammar.tokenNode(ID, 'name')
+		return _ModuleNameRule()
 		
 	def _sub_1_3(self):
 		
