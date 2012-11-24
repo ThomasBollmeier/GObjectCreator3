@@ -38,17 +38,18 @@ class Interpreter(object):
         visitor.enter_grammar()
         
         for child in ast.getChildren():
-            try:
-                self._top[child.getName()](child, visitor)
-            except KeyError:
-                pass
+            self._top[child.getName()](child, visitor)
         
         visitor.exit_grammar()
         
     def _eval_include(self, ast, visitor):
         
-        for inclpath in ast.getChildren():
-            visitor.visit_include_path(inclpath.getText())
+        inclpaths = ast.getChildren()
+        
+        for inclpath in inclpaths:
+            include_path = inclpath['name'].getText()
+            is_standard_path = bool(inclpath['standard'])
+            visitor.visit_include_path(include_path, is_standard_path)
             
     def _eval_module(self, ast, visitor):
         

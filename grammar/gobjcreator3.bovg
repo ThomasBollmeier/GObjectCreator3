@@ -69,13 +69,19 @@ return res
 
 inclpath = LITERAL | LABRACKET FILE_PATH RABRACKET;
 % inclpath {
+
+res = AstNode(self.getName())
+
 children = astNode.getChildren()
 if len(children) == 1:
 	text = children[0].getText()[1:-1]
+	res.addChild(AstNode('name', text))
 else:
 	text = children[1].getText()
+	res.addChild(AstNode('name', text))
+	res.addChild(AstNode('standard'))
 
-return AstNode(self.getName(), text)
+return res
 % }
 	
 <!----------------------------------------------------------------------------->

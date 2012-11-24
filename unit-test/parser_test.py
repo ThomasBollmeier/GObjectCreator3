@@ -40,9 +40,12 @@ class TestVisitor(AstVisitor):
         self._module_path = []
         self._indent_level = 0
         
-    def visit_include_path(self, include_path):
+    def visit_include_path(self, 
+                           include_path,
+                           is_standard_path
+                           ):
         
-        self._write("IncludePath: %s" % include_path)
+        self._write("IncludePath: %s (standard: %s)" % (include_path, is_standard_path))
                 
     def enter_module(self, module_name):
         

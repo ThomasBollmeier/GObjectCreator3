@@ -360,13 +360,19 @@ class _InclpathRule(grammar.Rule):
 		
 	def transform(self, astNode):
 		
+		
+		res = AstNode(self.getName())
+		
 		children = astNode.getChildren()
 		if len(children) == 1:
 			text = children[0].getText()[1:-1]
+			res.addChild(AstNode('name', text))
 		else:
 			text = children[1].getText()
+			res.addChild(AstNode('name', text))
+			res.addChild(AstNode('standard'))
 		
-		return AstNode(self.getName(), text)
+		return res
 		
 	def _sub_1(self):
 		

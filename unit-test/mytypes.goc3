@@ -1,0 +1,8 @@
+include <glib.goc3>;
+
+module demo::taskmgmt
+{
+	typedecl WorkList;
+	typedecl TaskId;
+	typedecl Task;
+}

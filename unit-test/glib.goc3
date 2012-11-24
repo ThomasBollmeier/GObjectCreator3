@@ -1,0 +1,6 @@
+module glib 
+{
+
+	typedecl GError;
+
+}

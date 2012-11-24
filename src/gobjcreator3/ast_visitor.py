@@ -9,7 +9,9 @@ class AstVisitor(object):
     def exit_grammar(self):
         pass
     
-    def visit_include_path(self, include_path):
+    def visit_include_path(self, 
+                           include_path, 
+                           is_standard_path):
         pass
     
     def enter_module(self, module_name):

@@ -1,12 +1,7 @@
-include 
-	<core.goc3>, 
-	<util/runtime.goc3>,
-	"mytypes.goc3"
-	;
-	
-typedecl GError;
+include	"mytypes.goc3";
+include <glib.goc3>;
 
-module Gtk 
+module gtk
 {
 
 	typedecl Label;
