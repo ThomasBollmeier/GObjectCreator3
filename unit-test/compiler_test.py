@@ -1,6 +1,6 @@
 import unittest
 import os
-from gobjcreator3.compiler import CompileStep0 
+from gobjcreator3.compiler import Compiler 
 
 _CURDIR = os.path.dirname(__file__)
 
@@ -16,15 +16,17 @@ class CompilerTest(unittest.TestCase):
         
     def testStep0(self):
         
-        step = CompileStep0()
-        root = step.process_file(_CURDIR + os.sep + "mydemo.goc3")
+        root = Compiler().compile(_CURDIR + os.sep + "mydemo.goc3")
         
-        print([(m.name, m.filepath_origin) for m in root.modules])
+        print([(m.get_fullname(), m.filepath_origin) for m in root.modules])
         
         demo = root.get_module("demo")
-        print([(m.name, m.filepath_origin) for m in demo.modules])
+        print([(m.get_fullname(), m.filepath_origin) for m in demo.modules])
         print([(t.get_fullname(), t.filepath_origin) for t in demo.types])
         print([(o.get_fullname(), o.filepath_origin) for o in demo.objects])
+        
+        human = root.get_module("bio::human")
+        print([(i.get_fullname(), i.filepath_origin) for i in human.interfaces])
                                   
 if __name__ == "__main__":
     

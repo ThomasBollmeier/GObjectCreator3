@@ -6,16 +6,15 @@ class Interpreter(object):
     
     def __init__(self):
 
-        self._module = {"module": self._eval_module,
-                        "type_declaration": self._eval_type_declaration,
-                        "gobject": self._eval_gobject,
-                        "ginterface": self._eval_ginterface,
-                        "gerror": self._eval_gerror,
-                        "genum": self._eval_genum,
-                        "gflags": self._eval_gflags}
+        self._top = {"module": self._eval_module,
+                     "type_declaration": self._eval_type_declaration,
+                     "gobject": self._eval_gobject,
+                     "ginterface": self._eval_ginterface,
+                     "gerror": self._eval_gerror,
+                     "genum": self._eval_genum,
+                     "gflags": self._eval_gflags}
         
-        self._top = {"include": self._eval_include}
-        self._top.update(self._module)
+        self._module = self._top
         
         self._gobject = {"method_section": self._eval_method_section,
                          "attr_section": self._eval_attr_section,
@@ -35,6 +34,8 @@ class Interpreter(object):
     
     def eval_grammar(self, ast, visitor):
         
+        self._cur_origin = ""
+        
         visitor.enter_grammar()
         
         for child in ast.getChildren():
@@ -42,20 +43,13 @@ class Interpreter(object):
         
         visitor.exit_grammar()
         
-    def _eval_include(self, ast, visitor):
-        
-        inclpaths = ast.getChildren()
-        
-        for inclpath in inclpaths:
-            include_path = inclpath['name'].getText()
-            is_standard_path = bool(inclpath['standard'])
-            visitor.visit_include_path(include_path, is_standard_path)
-            
     def _eval_module(self, ast, visitor):
         
         module_name = ast["name"].getText()
         
-        visitor.enter_module(module_name)
+        self._refresh_origin(ast)
+                
+        visitor.enter_module(module_name, self._cur_origin)
 
         for child in ast.getChildren():
             try:
@@ -67,12 +61,16 @@ class Interpreter(object):
         
     def _eval_type_declaration(self, ast, visitor):
         
-        visitor.visit_type_declaration(ast.getText())
+        self._refresh_origin(ast)
+
+        visitor.visit_type_declaration(ast.getText(), self._cur_origin)
         
     def _eval_gobject(self, ast, visitor):
         
         name = ast["name"].getText()
         
+        self._refresh_origin(ast)
+
         super_class_node = ast["super_class"]
         if not super_class_node:
             super_class = None
@@ -88,7 +86,7 @@ class Interpreter(object):
                 else:
                     interfaces.append(BuiltIn(intfNode.getText()))
         
-        visitor.enter_gobject(name, super_class, interfaces)
+        visitor.enter_gobject(name, super_class, interfaces, self._cur_origin)
 
         for child in ast.getChildren():
             try:
@@ -111,7 +109,9 @@ class Interpreter(object):
         
         name = ast["name"].getText()
         
-        visitor.enter_ginterface(name)
+        self._refresh_origin(ast)
+                
+        visitor.enter_ginterface(name, self._cur_origin)
         
         for method in ast.getChildrenByName("interface_method"):
             self._eval_interface_method(method, visitor)
@@ -152,16 +152,20 @@ class Interpreter(object):
         
         name = ast["name"].getText()
         
+        self._refresh_origin(ast)
+                
         codes = []
         for codeNode in ast.getChildrenByName('code'):
             codes.append(codeNode.getText())
         
-        visitor.visit_gerror(name, codes)
+        visitor.visit_gerror(name, codes, self._cur_origin)
                 
     def _eval_genum(self, ast, visitor):
         
         name = ast["name"].getText()
         
+        self._refresh_origin(ast)
+                
         codeNamesValues = []
         for enumCodeNode in ast.getChildrenByName('enum_code'):
             cname = enumCodeNode['name'].getText()
@@ -169,17 +173,19 @@ class Interpreter(object):
             value = valueNode and valueNode.getText() or None
             codeNamesValues.append((cname, value))
             
-        visitor.visit_genum(name, codeNamesValues)
+        visitor.visit_genum(name, codeNamesValues, self._cur_origin)
 
     def _eval_gflags(self, ast, visitor):
         
         name = ast["name"].getText()
-
+        
+        self._refresh_origin(ast)
+        
         codes = []
         for codeNode in ast.getChildrenByName('code'):
             codes.append(codeNode.getText())
         
-        visitor.visit_gflags(name, codes)
+        visitor.visit_gflags(name, codes, self._cur_origin)
         
     def _eval_method_section(self, ast, visitor):
         
@@ -298,3 +304,9 @@ class Interpreter(object):
         is_absolute_type = bool(full_type_name_node['absolute_type'])
         
         return FullTypeName(name, module_path, is_absolute_type)
+    
+    def _refresh_origin(self, ast):
+        
+        originNode = ast['origin']
+        if originNode:
+            self._cur_origin = originNode.getText() 

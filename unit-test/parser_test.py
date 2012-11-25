@@ -1,6 +1,6 @@
 import unittest
 import os
-from gobjcreator3.parser import GobjcreatorParser
+from gobjcreator3.preprocessor import PreProcessor
 from gobjcreator3.interpreter import Interpreter
 from gobjcreator3.ast_visitor import AstVisitor
 from gobjcreator3.parameter import Parameter
@@ -11,17 +11,17 @@ class ParserTest(unittest.TestCase):
     
     def setUp(self):
         
-        self.parser = GobjcreatorParser()
+        self._preprocessor = PreProcessor()
             
     def tearDown(self):
         
-        self.parser = None
+        self._preprocessor = None
         
     def testMyDemo(self):
         
         try:
             
-            ast = self.parser.parseFile(_CURDIR + os.sep + "mydemo.goc3")
+            ast = self._preprocessor.get_expanded_ast(_CURDIR + os.sep + "mydemo.goc3")
             self.assertIsNotNone(ast)
             print(ast.toXml())
             
@@ -39,17 +39,10 @@ class TestVisitor(AstVisitor):
         
         self._module_path = []
         self._indent_level = 0
+ 
+    def enter_module(self, module_name, origin):
         
-    def visit_include_path(self, 
-                           include_path,
-                           is_standard_path
-                           ):
-        
-        self._write("IncludePath: %s (standard: %s)" % (include_path, is_standard_path))
-                
-    def enter_module(self, module_name):
-        
-        self._write("Module: %s" % self._absname(module_name))
+        self._write("Module: %s [from %s]" % (self._absname(module_name), origin))
         
         self._module_path.append(module_name)
         self._indent()
@@ -59,20 +52,21 @@ class TestVisitor(AstVisitor):
         self._module_path.pop()
         self._dedent()
 
-    def visit_type_declaration(self, typename):
+    def visit_type_declaration(self, typename, origin):
         
-        self._write("GType: %s" % self._absname(typename))
+        self._write("GType: %s [from %s]" % (self._absname(typename), origin))
                 
     def enter_gobject(self, 
                       name,
                       super_class,
-                      interfaces
+                      interfaces,
+                      origin
                       ):
         
         if not super_class:
-            self._write("GObject: %s" % self._absname(name))
+            self._write("GObject: %s [from %s]" % (self._absname(name), origin))
         else:
-            self._write("GObject: %s > %s" % (self._absname(name), super_class))
+            self._write("GObject: %s > %s [from %s]" % (self._absname(name), super_class, origin))
         self._indent()
         
         if interfaces:
@@ -86,26 +80,26 @@ class TestVisitor(AstVisitor):
         
         self._dedent()
 
-    def enter_ginterface(self, name):
+    def enter_ginterface(self, name, origin):
         
-        self._write("GInterface: %s" % self._absname(name))
+        self._write("GInterface: %s [from %s]" % (self._absname(name), origin))
         self._indent()
 
     def exit_ginterface(self):
         
         self._dedent()
 
-    def visit_gerror(self, name, codes):
+    def visit_gerror(self, name, codes, origin):
         
-        self._write("GError: %s" % self._absname(name))
+        self._write("GError: %s [from %s]" % (self._absname(name), origin))
         self._indent()
         for code in codes:
             self._write(code)
         self._dedent()
 
-    def visit_genum(self, name, codeNamesValues):
+    def visit_genum(self, name, codeNamesValues, origin):
         
-        self._write("GEnum: %s" % self._absname(name))
+        self._write("GEnum: %s [from %s]" % (self._absname(name), origin))
         self._indent()
         for cname, cval in codeNamesValues:
             if cval is None:
@@ -114,9 +108,9 @@ class TestVisitor(AstVisitor):
                 self._write(cname + " = %s" % cval)
         self._dedent()
 
-    def visit_gflags(self, name, codes):
+    def visit_gflags(self, name, codes, origin):
         
-        self._write("GFlags: %s" % self._absname(name))
+        self._write("GFlags: %s [from %s]" % (self._absname(name), origin))
         self._indent()
         for code in codes:
             self._write(code)

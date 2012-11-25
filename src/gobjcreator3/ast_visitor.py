@@ -9,43 +9,39 @@ class AstVisitor(object):
     def exit_grammar(self):
         pass
     
-    def visit_include_path(self, 
-                           include_path, 
-                           is_standard_path):
-        pass
-    
-    def enter_module(self, module_name):
+    def enter_module(self, module_name, origin):
         pass
     
     def exit_module(self):
         pass
     
-    def visit_type_declaration(self, typename):
+    def visit_type_declaration(self, typename, origin):
         pass
 
     def enter_gobject(self, 
                       name,
                       super_class,
-                      interfaces
+                      interfaces,
+                      origin
                       ):
         pass
     
     def exit_gobject(self):
         pass
     
-    def enter_ginterface(self, name):
+    def enter_ginterface(self, name, origin):
         pass
     
     def exit_ginterface(self):
         pass    
     
-    def visit_gerror(self, name, codes):
+    def visit_gerror(self, name, codes, origin):
         pass
     
-    def visit_genum(self, name, codeNamesValues):
+    def visit_genum(self, name, codeNamesValues, origin):
         pass
     
-    def visit_gflags(self, name, codes):
+    def visit_gflags(self, name, codes, origin):
         pass
     
     def visit_method(self, 
