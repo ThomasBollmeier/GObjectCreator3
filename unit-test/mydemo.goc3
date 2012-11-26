@@ -46,6 +46,8 @@ module company
 module demo 
 {
 
+	typedecl MyInt;
+
 	gerror Error { FAILURE, NOT_FOUND, INVALID	}
 	
 	genum Status 

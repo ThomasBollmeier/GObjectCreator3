@@ -21,30 +21,20 @@ class ModuleElement(object):
 
 class Module(ModuleElement):
     
+    ELEM_MODULE = 1
+    ELEM_TYPE = 2
+    ELEM_OBJECT = 3
+    ELEM_INTERFACE = 4
+    ELEM_ERROR_DOMAIN = 5
+    ELEM_ENUMERATION = 6
+    ELEM_FLAGS = 7
+    
     def __init__(self, name):
         
         ModuleElement.__init__(self, name)
         
-        self.modules = []
-        self._modules_d = {}
-        
-        self.types = []
-        self._types_d = {}
-        
-        self.objects = []
-        self._objects_d = {}
-        
-        self.interfaces = []
-        self._interfaces_d = {}
-        
-        self.error_domains = []
-        self._error_domains_d = {}
-        
-        self.enumerations = []
-        self._enumerations_d = {}
-        
-        self.flags = []
-        self._flags_d = {}
+        self._elements = []
+        self._elements_d = {}
 
     def merge(self, module):
         
@@ -66,8 +56,8 @@ class Module(ModuleElement):
         for enum in module.enumerations:
             self.add_enumeration(enum)
             
-        for flag in module.flags:
-            self.add_flag(flag)
+        for flags in module.flags:
+            self.add_flags(flags)
                     
     def get_path(self):
         
@@ -89,88 +79,115 @@ class Module(ModuleElement):
                 
         module_names = module_path.split(ModuleElement.MODULE_SEP)
         parent = self
+        module = None
+        
         for module_name in module_names:
-            if module_name in parent._modules_d:
-                module = parent._modules_d[module_name]
-            else:
-                module = Module(module_name)
-                parent.add_module(module)
+            module = parent._get_element(module_name, Module.ELEM_MODULE)
+            if not module:
+                break
             parent = module
             
         return module
 
     def add_module(self, module):
         
-        if module.name in self._modules_d:
-            existing_module = self._modules_d[module.name]
+        existing_module = self._get_element(module.name, Module.ELEM_MODULE)
+        if existing_module:
             existing_module.merge(module)
             return
         
-        self.modules.append(module)
-        self._modules_d[module.name] = module
-        
+        self._add_element(module, Module.ELEM_MODULE, check_for_duplicates=False)
         module.module = self
         
     def add_type(self, type_):
         
-        if type_.name in self._types_d:
-            raise Exception("Type '%s' has already been defined!" % type_.name)
-        
-        self.types.append(type_)
-        self._types_d[type_.name] = type_
-         
+        self._add_element(type_, Module.ELEM_TYPE) 
         type_.module = self
         
     def add_object(self, obj):
 
-        if obj.name in self._objects_d:
-            raise Exception("Object '%s' has already been defined!" % obj.name)
-        
-        self.objects.append(obj)
-        self._objects_d[obj.name] = obj
-        
+        self._add_element(obj, Module.ELEM_OBJECT) 
         obj.module = self
         
     def add_interface(self, intf):
-
-        if intf.name in self._interfaces_d:
-            raise Exception("Interface '%s' has already been defined!" % intf.name)
         
-        self.interfaces.append(intf)
-        self._interfaces_d[intf.name] = intf
-        
+        self._add_element(intf, Module.ELEM_INTERFACE) 
         intf.module = self
         
     def add_error_domain(self, error_domain):
-        
-        if error_domain.name in self._error_domains_d:
-            raise Exception("Error domain '%s' has already been defined!" % error_domain.name)
-        
-        self.error_domains.append(error_domain)
-        self._error_domains_d[error_domain.name] = error_domain
-        
+
+        self._add_element(error_domain, Module.ELEM_ERROR_DOMAIN) 
         error_domain.module = self
         
     def add_enumeration(self, enum):
         
-        if enum.name in self._enumerations_d:
-            raise Exception("Enumeration '%s' has already been defined!" % enum.name)
-        
-        self.enumerations.append(enum)
-        self._enumerations_d[enum.name] = enum
-        
+        self._add_element(enum, Module.ELEM_ENUMERATION) 
         enum.module = self
         
-    def add_flag(self, flag):
+    def add_flags(self, flags):
+
+        self._add_element(flags, Module.ELEM_FLAGS) 
+        flags.module = self
         
-        if flag.name in self._flags_d:
-            raise Exception("Flag '%s' has already been defined!" % flag.name)
+    def _get_element(self, name, required_catg):
         
-        self.flags.append(flag)
-        self._flags_d[flag.name] = flag
+        if name not in self._elements_d:
+            return None
+        else:
+            catg, element = self._elements_d[name]
+            if catg == required_catg:
+                return element
+            else:
+                raise Exception("'%s' has been already defined" % name)
+            
+    def _get_elements(self, catg):
         
-        flag.module = self
+        return [elem[1] for elem in self._elements if elem[0] == catg]
+    
+    def _get_modules(self):
+        return self._get_elements(Module.ELEM_MODULE)
+    
+    modules = property(_get_modules)
+
+    def _get_types(self):
+        return self._get_elements(Module.ELEM_TYPE)
+    
+    types = property(_get_types)
+         
+    def _get_objects(self):
+        return self._get_elements(Module.ELEM_OBJECT)
+    
+    objects = property(_get_objects)
+         
+    def _get_interfaces(self):
+        return self._get_elements(Module.ELEM_INTERFACE)
+    
+    interfaces = property(_get_interfaces)
+         
+    def _get_error_domains(self):
+        return self._get_elements(Module.ELEM_ERROR_DOMAIN)
+    
+    error_domains = property(_get_error_domains)
+    
+    def _get_enumerations(self):
+        return self._get_elements(Module.ELEM_ENUMERATION)
+    
+    enumerations = property(_get_enumerations)
+    
+    def _get_flags(self):
+        return self._get_elements(Module.ELEM_FLAGS)
+    
+    flags = property(_get_flags)
+            
+    def _add_element(self, element, catg, check_for_duplicates=True):
         
+        if check_for_duplicates:
+            if self._get_element(element.name, catg) != None:
+                raise Exception("'%s' has been already defined" % element.name)
+            
+        self._elements_d[element.name] = (catg, element)
+        self._elements.append((catg, element))
+                
 class RootModule(Module):
 
     def __init__(self):

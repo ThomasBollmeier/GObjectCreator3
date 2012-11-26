@@ -6,6 +6,9 @@ from gobjcreator3.model.module import Module, RootModule
 from gobjcreator3.model.type import Type
 from gobjcreator3.model.gobject import GObject
 from gobjcreator3.model.ginterface import GInterface
+from gobjcreator3.model.gerror import GError
+from gobjcreator3.model.genum import GEnum
+from gobjcreator3.model.gflags import GFlags
 
 class Compiler(object):
     
@@ -94,44 +97,19 @@ class CompileStep0(AstVisitor):
         self._interface = None
                 
     def visit_gerror(self, name, codes, origin):
-        pass
+        
+        error_domain = GError(name, codes)
+        error_domain.filepath_origin = origin
+        self._module_stack[-1].add_error_domain(error_domain)
     
     def visit_genum(self, name, codeNamesValues, origin):
-        pass
-    
+        
+        enum = GEnum(name, codeNamesValues)
+        enum.filepath_origin = origin
+        self._module_stack[-1].add_enumeration(enum)
+            
     def visit_gflags(self, name, codes, origin):
-        pass
-    
-    def visit_method(self, 
-                     name, 
-                     attributes,
-                     parameters 
-                     ):
-        pass
-    
-    def visit_interface_method(self,
-                               name,
-                               parameters
-                               ):
-        pass
-    
-    def visit_attribute(self,
-                        aname,
-                        atype,
-                        aattributes
-                        ):
-        pass
-    
-    def visit_property(self,
-                       name,
-                       attributes
-                       ):
         
-        pass
-    
-    def visit_signal(self,
-                     name,
-                     parameters
-                     ):
-        pass
-        
+        flags = GFlags(name, codes)
+        flags.filepath_origin = origin
+        self._module_stack[-1].add_flags(flags)
