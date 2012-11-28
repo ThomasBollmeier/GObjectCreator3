@@ -23,8 +23,12 @@ class Compiler(object):
         
         step0 = CompileStep0()
         self._interpreter.eval_grammar(expanded_ast, step0)
+        root_module = step0.get_root_module()
         
-        return step0.get_root_module()
+        step1 = CompileStep1(root_module)
+        self._interpreter.eval_grammar(expanded_ast, step1)
+                
+        return root_module
 
 class CompileStep0(AstVisitor):
     
@@ -113,3 +117,84 @@ class CompileStep0(AstVisitor):
         flags = GFlags(name, codes)
         flags.filepath_origin = origin
         self._module_stack[-1].add_flags(flags)
+
+class CompileStep1(AstVisitor):
+    
+    def __init__(self, root_module):
+        
+        self._root = root_module
+    
+    def enter_grammar(self):
+        pass
+    
+    def exit_grammar(self):
+        pass
+    
+    def enter_module(self, module_name, origin):
+        pass
+    
+    def exit_module(self):
+        pass
+    
+    def visit_type_declaration(self, typename, origin):
+        pass
+
+    def enter_gobject(self, 
+                      name,
+                      super_class,
+                      interfaces,
+                      origin
+                      ):
+        pass
+    
+    def exit_gobject(self):
+        pass
+    
+    def enter_ginterface(self, name, origin):
+        pass
+    
+    def exit_ginterface(self):
+        pass    
+    
+    def visit_gerror(self, name, codes, origin):
+        pass
+    
+    def visit_genum(self, name, codeNamesValues, origin):
+        pass
+    
+    def visit_gflags(self, name, codes, origin):
+        pass
+    
+    def visit_method(self, 
+                     name, 
+                     attributes,
+                     parameters 
+                     ):
+        pass
+    
+    def visit_interface_method(self,
+                               name,
+                               parameters
+                               ):
+        pass
+    
+    def visit_attribute(self,
+                        aname,
+                        atype,
+                        aattributes
+                        ):
+        pass
+    
+    def visit_property(self,
+                       name,
+                       attributes
+                       ):
+        
+        pass
+    
+    def visit_signal(self,
+                     name,
+                     parameters
+                     ):
+        pass
+    

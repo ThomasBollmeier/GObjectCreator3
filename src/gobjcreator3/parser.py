@@ -840,26 +840,16 @@ class _EnumCodeRule(grammar.Rule):
 		elements = []
 		elements.append(self._sub_1_2_1_1())
 		elements.append(self._sub_1_2_1_2())
-		elements.append(self._sub_1_2_1_3())
-		elements.append(self._sub_1_2_1_4())
 		
 		return grammar.Sequence(elements)
 		
 	def _sub_1_2_1_1(self):
 		
-		return grammar.tokenNode(LSBRACKET)
+		return grammar.tokenNode(ASSIGN)
 		
 	def _sub_1_2_1_2(self):
 		
-		return grammar.tokenNode(ASSIGN)
-		
-	def _sub_1_2_1_3(self):
-		
 		return grammar.tokenNode(UINT, 'value')
-		
-	def _sub_1_2_1_4(self):
-		
-		return grammar.tokenNode(RSBRACKET)
 		
 class _GerrorRule(grammar.Rule):
 

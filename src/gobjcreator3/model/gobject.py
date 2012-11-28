@@ -1,15 +1,14 @@
-from gobjcreator3.model.module import ModuleElement
+from gobjcreator3.model.clsintf import ClsIntf
 
-class GObject(ModuleElement):
+class GObject(ClsIntf):
     
     def __init__(self, name):
         
-        ModuleElement.__init__(self, name)
+        ClsIntf.__init__(self, name)
         
         self.super_class = None
         self.interfaces = []
         
-        self.methods = []
         self.attributes = []
         self.properties = []
         self.signals = []

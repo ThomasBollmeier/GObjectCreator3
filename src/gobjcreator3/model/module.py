@@ -29,6 +29,15 @@ class Module(ModuleElement):
     ELEM_ENUMERATION = 6
     ELEM_FLAGS = 7
     
+    _elem_catg_names = ['module', 
+                        'type', 
+                        'object',
+                        'interface',
+                        'error domain',
+                        'enumeration',
+                        'flags' 
+                        ]
+    
     def __init__(self, name):
         
         ModuleElement.__init__(self, name)
@@ -58,6 +67,14 @@ class Module(ModuleElement):
             
         for flags in module.flags:
             self.add_flags(flags)
+            
+    def get_root(self):
+        
+        res = self
+        while res.module:
+            res = res.module
+            
+        return res
                     
     def get_path(self):
         
@@ -72,22 +89,33 @@ class Module(ModuleElement):
             
         return path
             
-    def get_module(self, module_path):
+    def get_module(self, path):
         
-        if not module_path:
-            return self
-                
-        module_names = module_path.split(ModuleElement.MODULE_SEP)
-        parent = self
-        module = None
+        return self._get_element(path, Module.ELEM_MODULE)
+    
+    def get_type(self, path):
         
-        for module_name in module_names:
-            module = parent._get_element(module_name, Module.ELEM_MODULE)
-            if not module:
-                break
-            parent = module
-            
-        return module
+        return self._get_element(path, Module.ELEM_TYPE)
+
+    def get_object(self, path):
+        
+        return self._get_element(path, Module.ELEM_OBJECT)
+    
+    def get_interface(self, path):
+        
+        return self._get_element(path, Module.ELEM_INTERFACE)
+    
+    def get_error_domain(self, path):
+        
+        return self._get_element(path, Module.ELEM_ERROR_DOMAIN)
+    
+    def get_enumeration(self, path):
+        
+        return self._get_element(path, Module.ELEM_ENUMERATION)
+    
+    def get_flags(self, path):
+        
+        return self._get_element(path, Module.ELEM_FLAGS)
 
     def add_module(self, module):
         
@@ -129,16 +157,40 @@ class Module(ModuleElement):
         self._add_element(flags, Module.ELEM_FLAGS) 
         flags.module = self
         
-    def _get_element(self, name, required_catg):
+    def _get_element(self, path, required_catg):
         
-        if name not in self._elements_d:
+        if not path:
+            if required_catg == Module.ELEM_MODULE:
+                return self
+            else:
+                raise Exception('No path was passed!')
+        
+        names = path.split(ModuleElement.MODULE_SEP)
+        if names[0]:
+            parent_module = self 
+        else: # absolute path:
+            parent_module = self.get_root()
+            names = names[1:]
+            
+        if len(names) == 1:
+            element_name = names[0]
+            module_names = []
+        else:
+            element_name = names[-1]
+            module_names = names[:-1]
+            
+        for module_name in module_names:
+            parent_module = parent_module._get_element(module_name, Module.ELEM_MODULE)
+        
+        if element_name not in parent_module._elements_d:
             return None
         else:
-            catg, element = self._elements_d[name]
+            catg, element = parent_module._elements_d[element_name]
             if catg == required_catg:
                 return element
             else:
-                raise Exception("'%s' has been already defined" % name)
+                raise Exception("'%s' is no %s" % \
+                                (element_name, Module._elem_catg_names[required_catg-1]))
             
     def _get_elements(self, catg):
         

@@ -235,7 +235,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 	
-enum_code = code=ID (LSBRACKET ASSIGN value=UINT RSBRACKET)?;
+enum_code = code=ID (ASSIGN value=UINT)?;
 % enum_code {
 res = AstNode('enum_code')
 

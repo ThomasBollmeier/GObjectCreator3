@@ -29,6 +29,9 @@ class CompilerTest(unittest.TestCase):
         
         human = root.get_module("bio::human")
         print([(i.get_fullname(), i.filepath_origin) for i in human.interfaces])
+        
+        thread = demo.get_object("::os::threading::Thread")
+        print(thread)
                                   
 if __name__ == "__main__":
     

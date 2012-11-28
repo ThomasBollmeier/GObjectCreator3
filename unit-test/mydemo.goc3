@@ -52,7 +52,7 @@ module demo
 	
 	genum Status 
 	{ 
-		WAITING [=100], 
+		WAITING = 100, 
 		RUNNING, 
 		PAUSED, 
 		STOPPED 

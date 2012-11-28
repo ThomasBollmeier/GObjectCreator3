@@ -1,9 +1,7 @@
-from gobjcreator3.model.module import ModuleElement
+from gobjcreator3.model.clsintf import ClsIntf
 
-class GInterface(ModuleElement):
+class GInterface(ClsIntf):
     
     def __init__(self, name):
         
-        ModuleElement.__init__(self, name)
-        
-        self.methods = []
+        ClsIntf.__init__(self, name)
