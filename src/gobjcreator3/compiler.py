@@ -65,15 +65,20 @@ class CompileStep0(AstVisitor):
         
         cur_module = self._module_stack.pop()
         parent = self._module_stack[-1]
-        parent.add_module(cur_module)
+        
+        existing_module = parent.get_module(cur_module.name)
+        if existing_module is None:
+            parent.add_element(cur_module)
+        else:
+            existing_module.merge(cur_module)
     
     def visit_type_declaration(self, typename, origin):
 
-        type_ = Type(typename)
+        type_ = Type(typename, Type.OTHER)
         type_.filepath_origin = origin
         
         module = self._module_stack[-1]
-        module.add_type(type_)
+        module.add_element(type_)
         
     def enter_gobject(self, 
                       name,
@@ -87,7 +92,7 @@ class CompileStep0(AstVisitor):
     
     def exit_gobject(self):
         
-        self._module_stack[-1].add_object(self._object)
+        self._module_stack[-1].add_element(self._object)
         self._object = None
     
     def enter_ginterface(self, name, origin):
@@ -97,26 +102,26 @@ class CompileStep0(AstVisitor):
     
     def exit_ginterface(self):
         
-        self._module_stack[-1].add_interface(self._interface)
+        self._module_stack[-1].add_element(self._interface)
         self._interface = None
                 
     def visit_gerror(self, name, codes, origin):
         
         error_domain = GError(name, codes)
         error_domain.filepath_origin = origin
-        self._module_stack[-1].add_error_domain(error_domain)
+        self._module_stack[-1].add_element(error_domain)
     
     def visit_genum(self, name, codeNamesValues, origin):
         
         enum = GEnum(name, codeNamesValues)
         enum.filepath_origin = origin
-        self._module_stack[-1].add_enumeration(enum)
+        self._module_stack[-1].add_element(enum)
             
     def visit_gflags(self, name, codes, origin):
         
         flags = GFlags(name, codes)
         flags.filepath_origin = origin
-        self._module_stack[-1].add_flags(flags)
+        self._module_stack[-1].add_element(flags)
 
 class CompileStep1(AstVisitor):
     

@@ -1,7 +1,7 @@
 class ModuleElement(object):
     
     MODULE_SEP = '::'
-    
+
     def __init__(self, name):
         
         self.name = name
@@ -21,23 +21,6 @@ class ModuleElement(object):
 
 class Module(ModuleElement):
     
-    ELEM_MODULE = 1
-    ELEM_TYPE = 2
-    ELEM_OBJECT = 3
-    ELEM_INTERFACE = 4
-    ELEM_ERROR_DOMAIN = 5
-    ELEM_ENUMERATION = 6
-    ELEM_FLAGS = 7
-    
-    _elem_catg_names = ['module', 
-                        'type', 
-                        'object',
-                        'interface',
-                        'error domain',
-                        'enumeration',
-                        'flags' 
-                        ]
-    
     def __init__(self, name):
         
         ModuleElement.__init__(self, name)
@@ -47,26 +30,18 @@ class Module(ModuleElement):
 
     def merge(self, module):
         
-        for m in module.modules:
-            self.add_module(m)
-        
-        for type_ in module.types:
-            self.add_type(type_)
-            
-        for obj in module.objects:
-            self.add_object(obj)
-            
-        for intf in module.interfaces:
-            self.add_interface(intf)
-            
-        for error_domain in module.error_domains:
-            self.add_error_domain(error_domain)
-            
-        for enum in module.enumerations:
-            self.add_enumeration(enum)
-            
-        for flags in module.flags:
-            self.add_flags(flags)
+        for elem in module._elements:
+            if not isinstance(elem, Module):
+                self.add_element(elem)
+            else:
+                try:
+                    existing_element = self._elements_d[elem.name]
+                    if isinstance(existing_element, Module):
+                        existing_element.merge(elem)
+                    else:
+                        raise Exception("'%s' has been already defined" % elem.name)
+                except KeyError:
+                    self.add_element(elem)
             
     def get_root(self):
         
@@ -91,79 +66,76 @@ class Module(ModuleElement):
             
     def get_module(self, path):
         
-        return self._get_element(path, Module.ELEM_MODULE)
-    
+        res = self._get_element(path)
+        if res and isinstance(res, Module):
+            return res
+        else:
+            return None
+        
     def get_type(self, path):
         
-        return self._get_element(path, Module.ELEM_TYPE)
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.OTHER:
+            return res
+        else:
+            return None
 
     def get_object(self, path):
         
-        return self._get_element(path, Module.ELEM_OBJECT)
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.OBJECT:
+            return res
+        else:
+            return None
     
     def get_interface(self, path):
         
-        return self._get_element(path, Module.ELEM_INTERFACE)
-    
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.INTERFACE:
+            return res
+        else:
+            return None
+        
     def get_error_domain(self, path):
         
-        return self._get_element(path, Module.ELEM_ERROR_DOMAIN)
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.ERROR_DOMAIN:
+            return res
+        else:
+            return None
     
     def get_enumeration(self, path):
         
-        return self._get_element(path, Module.ELEM_ENUMERATION)
-    
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.ENUMERATION:
+            return res
+        else:
+            return None
+        
     def get_flags(self, path):
         
-        return self._get_element(path, Module.ELEM_FLAGS)
-
-    def add_module(self, module):
+        res = self._get_element(path)
+        if res and isinstance(res, Type) and res.category == Type.FLAGS:
+            return res
+        else:
+            return None
         
-        existing_module = self._get_element(module.name, Module.ELEM_MODULE)
-        if existing_module:
-            existing_module.merge(module)
-            return
+    def get_type_element(self, path):
         
-        self._add_element(module, Module.ELEM_MODULE, check_for_duplicates=False)
-        module.module = self
+        res = self._get_element(path)
+        if res and isinstance(res, Type):
+            return res
+        else:
+            return None
         
-    def add_type(self, type_):
+    def get_element(self, path):
         
-        self._add_element(type_, Module.ELEM_TYPE) 
-        type_.module = self
+        return self._get_element(path)
         
-    def add_object(self, obj):
-
-        self._add_element(obj, Module.ELEM_OBJECT) 
-        obj.module = self
-        
-    def add_interface(self, intf):
-        
-        self._add_element(intf, Module.ELEM_INTERFACE) 
-        intf.module = self
-        
-    def add_error_domain(self, error_domain):
-
-        self._add_element(error_domain, Module.ELEM_ERROR_DOMAIN) 
-        error_domain.module = self
-        
-    def add_enumeration(self, enum):
-        
-        self._add_element(enum, Module.ELEM_ENUMERATION) 
-        enum.module = self
-        
-    def add_flags(self, flags):
-
-        self._add_element(flags, Module.ELEM_FLAGS) 
-        flags.module = self
-        
-    def _get_element(self, path, required_catg):
+    def _get_element(self, path):
         
         if not path:
-            if required_catg == Module.ELEM_MODULE:
-                return self
-            else:
-                raise Exception('No path was passed!')
+            return self
         
         names = path.split(ModuleElement.MODULE_SEP)
         if names[0]:
@@ -180,65 +152,70 @@ class Module(ModuleElement):
             module_names = names[:-1]
             
         for module_name in module_names:
-            parent_module = parent_module._get_element(module_name, Module.ELEM_MODULE)
-        
-        if element_name not in parent_module._elements_d:
-            return None
-        else:
-            catg, element = parent_module._elements_d[element_name]
-            if catg == required_catg:
-                return element
-            else:
-                raise Exception("'%s' is no %s" % \
-                                (element_name, Module._elem_catg_names[required_catg-1]))
+            parent_module = parent_module._get_element(module_name)
+            if not isinstance(parent_module, Module):
+                raise Exception("'%s' is not a module!" % module_name)
             
-    def _get_elements(self, catg):
+        try:
+            return parent_module._elements_d[element_name]      
+        except KeyError:
+            return None
+
+    def _get_type_elements(self, category):
         
-        return [elem[1] for elem in self._elements if elem[0] == catg]
+        return [elem for elem in self._elements if isinstance(elem, Type) and elem.category == category]
     
     def _get_modules(self):
-        return self._get_elements(Module.ELEM_MODULE)
+
+        return [elem for elem in self._elements if isinstance(elem, Module)]
     
     modules = property(_get_modules)
 
     def _get_types(self):
-        return self._get_elements(Module.ELEM_TYPE)
+        
+        return self._get_type_elements(Type.OTHER)
     
     types = property(_get_types)
          
     def _get_objects(self):
-        return self._get_elements(Module.ELEM_OBJECT)
+        
+        return self._get_type_elements(Type.OBJECT)
     
     objects = property(_get_objects)
          
     def _get_interfaces(self):
-        return self._get_elements(Module.ELEM_INTERFACE)
+        
+        return self._get_type_elements(Type.INTERFACE)
     
     interfaces = property(_get_interfaces)
          
     def _get_error_domains(self):
-        return self._get_elements(Module.ELEM_ERROR_DOMAIN)
-    
+        
+        return self._get_type_elements(Type.ERROR_DOMAIN)
+            
     error_domains = property(_get_error_domains)
     
     def _get_enumerations(self):
-        return self._get_elements(Module.ELEM_ENUMERATION)
+        
+        return self._get_type_elements(Type.ENUMERATION)
     
     enumerations = property(_get_enumerations)
     
     def _get_flags(self):
-        return self._get_elements(Module.ELEM_FLAGS)
+        
+        return self._get_type_elements(Type.FLAGS)
     
     flags = property(_get_flags)
             
-    def _add_element(self, element, catg, check_for_duplicates=True):
+    def add_element(self, element):
         
-        if check_for_duplicates:
-            if self._get_element(element.name, catg) != None:
-                raise Exception("'%s' has been already defined" % element.name)
+        if element.name in self._elements_d:
+            raise Exception("'%s' has been already defined" % element.name)
             
-        self._elements_d[element.name] = (catg, element)
-        self._elements.append((catg, element))
+        self._elements_d[element.name] = element
+        self._elements.append(element)
+        
+        element.module = self
                 
 class RootModule(Module):
 
@@ -246,3 +223,4 @@ class RootModule(Module):
         
         Module.__init__(self, '')
 
+from gobjcreator3.model.type import Type

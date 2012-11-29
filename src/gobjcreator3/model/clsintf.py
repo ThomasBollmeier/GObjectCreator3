@@ -1,10 +1,10 @@
-from gobjcreator3.model.module import ModuleElement
+from gobjcreator3.model.type import Type
 
-class ClsIntf(ModuleElement):
+class ClsIntf(Type):
     
-    def __init__(self, name):
+    def __init__(self, name, category):
         
-        ModuleElement.__init__(self, name)
+        Type.__init__(self, name, category)
         
         self._methods = []
         self._methods_d = {}

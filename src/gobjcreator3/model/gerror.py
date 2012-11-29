@@ -1,9 +1,9 @@
-from gobjcreator3.model.module import ModuleElement
+from gobjcreator3.model.type import Type
 
-class GError(ModuleElement):
+class GError(Type):
     
     def __init__(self, name, error_codes):
         
-        ModuleElement.__init__(self, name)
+        Type.__init__(self, name, Type.ERROR_DOMAIN)
         
         self.error_codes = error_codes

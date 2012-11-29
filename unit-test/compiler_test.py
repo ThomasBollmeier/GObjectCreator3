@@ -1,6 +1,7 @@
 import unittest
 import os
-from gobjcreator3.compiler import Compiler 
+from gobjcreator3.compiler import Compiler
+from gobjcreator3.model.type import Type 
 
 _CURDIR = os.path.dirname(__file__)
 
@@ -30,8 +31,9 @@ class CompilerTest(unittest.TestCase):
         human = root.get_module("bio::human")
         print([(i.get_fullname(), i.filepath_origin) for i in human.interfaces])
         
-        thread = demo.get_object("::os::threading::Thread")
+        thread = demo.get_type_element("::os::threading::Thread")
         print(thread)
+        print(thread.category == Type.OBJECT)
                                   
 if __name__ == "__main__":
     
