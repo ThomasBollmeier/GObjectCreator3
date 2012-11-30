@@ -15,3 +15,8 @@ class Type(ModuleElement):
         ModuleElement.__init__(self, name)
         self.category = category
         
+class BuiltIn(Type):
+    
+    def __init__(self, name):
+        
+        Type.__init__(self, name, Type.BUILTIN)

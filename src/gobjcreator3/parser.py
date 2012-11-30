@@ -37,6 +37,9 @@ all_token_types.append(FILE_PATH)
 UINT = token.Word('[1-9][0-9]*|0')
 all_token_types.append(UINT)
 
+PARENT_MODULE = token.Keyword('..', caseSensitive=True)
+all_token_types.append(PARENT_MODULE)
+
 LRARROW = token.Separator('<->', whitespaceAllowed=True, escape=True)
 all_token_types.append(LRARROW)
 
@@ -977,7 +980,27 @@ class _FullTypeNameRule(grammar.Rule):
 		
 	def _sub_1_2_1_1(self):
 		
+		branches = []
+		branches.append(self._sub_1_2_1_1_1())
+		branches.append(self._sub_1_2_1_1_2())
+		
+		return grammar.Fork(branches)
+		
+	def _sub_1_2_1_1_1(self):
+		
+		return self._sub_1_2_1_1_1_1()
+		
+	def _sub_1_2_1_1_1_1(self):
+		
 		return grammar.tokenNode(ID, 'module')
+		
+	def _sub_1_2_1_1_2(self):
+		
+		return self._sub_1_2_1_1_2_1()
+		
+	def _sub_1_2_1_1_2_1(self):
+		
+		return grammar.tokenNode(PARENT_MODULE, 'module')
 		
 	def _sub_1_2_1_2(self):
 		
@@ -997,7 +1020,27 @@ class _FullTypeNameRule(grammar.Rule):
 		
 	def _sub_1_2_1_2_1_2(self):
 		
+		branches = []
+		branches.append(self._sub_1_2_1_2_1_2_1())
+		branches.append(self._sub_1_2_1_2_1_2_2())
+		
+		return grammar.Fork(branches)
+		
+	def _sub_1_2_1_2_1_2_1(self):
+		
+		return self._sub_1_2_1_2_1_2_1_1()
+		
+	def _sub_1_2_1_2_1_2_1_1(self):
+		
 		return grammar.tokenNode(ID, 'module')
+		
+	def _sub_1_2_1_2_1_2_2(self):
+		
+		return self._sub_1_2_1_2_1_2_2_1()
+		
+	def _sub_1_2_1_2_1_2_2_1(self):
+		
+		return grammar.tokenNode(PARENT_MODULE, 'module')
 		
 	def _sub_1_2_1_3(self):
 		

@@ -62,7 +62,7 @@ module demo
 
 	gobject Person 
 	{
-		implements ::Human, bio::human::Human;
+		implements ::Human, ..::bio::human::Human;
 		
 		public methods 
 		{
@@ -76,7 +76,7 @@ module demo
 		
 		inherits from Person; // <-- super class
 		
-		implements company::Employee; // <-- interface
+		implements ..::company::Employee; // <-- interface
 		
 		properties 
 		{

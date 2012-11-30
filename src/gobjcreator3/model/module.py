@@ -21,6 +21,8 @@ class ModuleElement(object):
 
 class Module(ModuleElement):
     
+    PARENT = ".."
+    
     def __init__(self, name):
         
         ModuleElement.__init__(self, name)
@@ -152,7 +154,10 @@ class Module(ModuleElement):
             module_names = names[:-1]
             
         for module_name in module_names:
-            parent_module = parent_module._get_element(module_name)
+            if module_name != Module.PARENT:
+                parent_module = parent_module._get_element(module_name)
+            else:
+                parent_module = parent_module.module
             if not isinstance(parent_module, Module):
                 raise Exception("'%s' is not a module!" % module_name)
             

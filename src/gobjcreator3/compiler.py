@@ -1,9 +1,10 @@
 from gobjcreator3.preprocessor import PreProcessor
 from gobjcreator3.interpreter import Interpreter
 from gobjcreator3.ast_visitor import AstVisitor
+from gobjcreator3.parameter import FullTypeName, BuiltIn
 
-from gobjcreator3.model.module import Module, RootModule
-from gobjcreator3.model.type import Type
+from gobjcreator3.model.module import Module, RootModule, ModuleElement
+from gobjcreator3.model.type import Type, BuiltIn as BuiltInType
 from gobjcreator3.model.gobject import GObject
 from gobjcreator3.model.ginterface import GInterface
 from gobjcreator3.model.gerror import GError
@@ -128,32 +129,81 @@ class CompileStep1(AstVisitor):
     def __init__(self, root_module):
         
         self._root = root_module
+        
+    def _get_type(self, type_info):
+        
+        if isinstance(type_info, FullTypeName):
+        
+            path = ""
+            for part in type_info.module_path:
+                if path:
+                    path += ModuleElement.MODULE_SEP
+                path += part
+                
+            if path:
+                path += ModuleElement.MODULE_SEP + type_info.name
+            else:
+                path = type_info.name 
+                
+            if not type_info.is_absolute_type:
+                module = self._module_stack[-1]
+            else:
+                module = self._root
+                
+            return module.get_type_element(path)
+                        
+        elif isinstance(type_info, BuiltIn):
+            
+            return BuiltInType(type_info.name)
+        
+        else:
+            
+            raise Exception('Unsupported type!')
+        
+    # Visitor methods:
     
     def enter_grammar(self):
-        pass
+        
+        self._module_stack = [self._root]
+        self._gobject = None
+        self._ginterface = None
     
     def exit_grammar(self):
+        
         pass
     
     def enter_module(self, module_name, origin):
-        pass
-    
+        
+        module = self._module_stack[-1].get_module(module_name)
+        self._module_stack.append(module)
+            
     def exit_module(self):
-        pass
+        
+        self._module_stack.pop()
     
-    def visit_type_declaration(self, typename, origin):
-        pass
-
     def enter_gobject(self, 
                       name,
                       super_class,
                       interfaces,
                       origin
                       ):
-        pass
+        
+        cur_module = self._module_stack[-1]
+        
+        self._gobject = cur_module.get_object(name)
+        
+        if super_class:
+            super = self._get_type(super_class)
+            if super is None or super.category != Type.OBJECT:
+                raise Exception("Super type '%s' does not exist or is not a class!" % super_class)
+            self._gobject.super_class = super
+        
+        for intf_info in interfaces:
+            intf = self._get_type(intf_info)
     
     def exit_gobject(self):
-        pass
+
+        self._gobject = None
     
     def enter_ginterface(self, name, origin):
         pass
