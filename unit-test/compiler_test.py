@@ -15,7 +15,7 @@ class CompilerTest(unittest.TestCase):
         
         pass
         
-    def testStep0(self):
+    def testCompileSteps(self):
         
         root = Compiler().compile(_CURDIR + os.sep + "mydemo.goc3")
         
@@ -28,12 +28,22 @@ class CompilerTest(unittest.TestCase):
         print([(e.get_fullname(), e.filepath_origin) for e in demo.error_domains])
         print([(f.get_fullname(), f.filepath_origin) for f in demo.flags])
         
-        human = root.get_module("bio::human")
+        human = root.get_module("bio/human")
         print([(i.get_fullname(), i.filepath_origin) for i in human.interfaces])
+
+        worker = demo.get_object("Worker")
+        print([(i.get_fullname(), i.filepath_origin) for i in worker.interfaces])
+        method = worker.get_method("create")
+        for p in method.parameters:
+            print("%s: %s" % (p.name, p.type))
         
-        thread = demo.get_type_element("::os::threading::Thread")
+        thread = demo.get_type_element("../os/threading/Thread")
         print(thread)
         print(thread.category == Type.OBJECT)
+        
+        employee = root.get_interface("company/Employee")
+        print([m.name for m in employee.methods])
+        
                                   
 if __name__ == "__main__":
     

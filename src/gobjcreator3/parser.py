@@ -49,9 +49,6 @@ all_token_types.append(LARROW)
 RARROW = token.Separator('->', whitespaceAllowed=True, escape=True)
 all_token_types.append(RARROW)
 
-COLONCOLON = token.Separator('::', whitespaceAllowed=True, escape=True)
-all_token_types.append(COLONCOLON)
-
 ASSIGN = token.Separator('=', whitespaceAllowed=True, escape=True)
 all_token_types.append(ASSIGN)
 
@@ -66,6 +63,9 @@ all_token_types.append(COMMA)
 
 DASH = token.Separator('-', whitespaceAllowed=True, escape=True)
 all_token_types.append(DASH)
+
+SLASH = token.Separator('/', whitespaceAllowed=True, escape=True)
+all_token_types.append(SLASH)
 
 LSBRACKET = token.Separator('[', whitespaceAllowed=True, escape=True)
 all_token_types.append(LSBRACKET)
@@ -172,32 +172,35 @@ all_token_types.append(KEY_26)
 KEY_27 = token.Keyword('overridden', caseSensitive=True)
 all_token_types.append(KEY_27)
 
-KEY_28 = token.Keyword('ref', caseSensitive=True)
+KEY_28 = token.Keyword('final', caseSensitive=True)
 all_token_types.append(KEY_28)
 
-KEY_29 = token.Keyword('list', caseSensitive=True)
+KEY_29 = token.Keyword('ref', caseSensitive=True)
 all_token_types.append(KEY_29)
 
-KEY_30 = token.Keyword('string', caseSensitive=True)
+KEY_30 = token.Keyword('list', caseSensitive=True)
 all_token_types.append(KEY_30)
 
-KEY_31 = token.Keyword('boolean', caseSensitive=True)
+KEY_31 = token.Keyword('string', caseSensitive=True)
 all_token_types.append(KEY_31)
 
-KEY_32 = token.Keyword('unsigned', caseSensitive=True)
+KEY_32 = token.Keyword('boolean', caseSensitive=True)
 all_token_types.append(KEY_32)
 
-KEY_33 = token.Keyword('integer', caseSensitive=True)
+KEY_33 = token.Keyword('unsigned', caseSensitive=True)
 all_token_types.append(KEY_33)
 
-KEY_34 = token.Keyword('float', caseSensitive=True)
+KEY_34 = token.Keyword('integer', caseSensitive=True)
 all_token_types.append(KEY_34)
 
-KEY_35 = token.Keyword('double', caseSensitive=True)
+KEY_35 = token.Keyword('float', caseSensitive=True)
 all_token_types.append(KEY_35)
 
-KEY_36 = token.Keyword('any', caseSensitive=True)
+KEY_36 = token.Keyword('double', caseSensitive=True)
 all_token_types.append(KEY_36)
+
+KEY_37 = token.Keyword('any', caseSensitive=True)
+all_token_types.append(KEY_37)
 
 class _ModuleNameRule(grammar.Rule):
 
@@ -246,7 +249,7 @@ class _ModuleNameRule(grammar.Rule):
 		
 	def _sub_1_2_1_1(self):
 		
-		return grammar.tokenNode(COLONCOLON)
+		return grammar.tokenNode(SLASH)
 		
 	def _sub_1_2_1_2(self):
 		
@@ -544,7 +547,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_30)
+		return grammar.tokenNode(KEY_31)
 		
 	def _sub_2(self):
 		
@@ -552,7 +555,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_2_1(self):
 		
-		return grammar.tokenNode(KEY_31)
+		return grammar.tokenNode(KEY_32)
 		
 	def _sub_3(self):
 		
@@ -564,11 +567,11 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_3_1(self):
 		
-		return grammar.zeroToOne(grammar.tokenNode(KEY_32))
+		return grammar.zeroToOne(grammar.tokenNode(KEY_33))
 		
 	def _sub_3_2(self):
 		
-		return grammar.tokenNode(KEY_33)
+		return grammar.tokenNode(KEY_34)
 		
 	def _sub_4(self):
 		
@@ -576,7 +579,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_4_1(self):
 		
-		return grammar.tokenNode(KEY_34)
+		return grammar.tokenNode(KEY_35)
 		
 	def _sub_5(self):
 		
@@ -584,7 +587,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_5_1(self):
 		
-		return grammar.tokenNode(KEY_35)
+		return grammar.tokenNode(KEY_36)
 		
 	def _sub_6(self):
 		
@@ -592,7 +595,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_6_1(self):
 		
-		return grammar.tokenNode(KEY_36)
+		return grammar.tokenNode(KEY_37)
 		
 class _VisibilityRule(grammar.Rule):
 
@@ -768,6 +771,7 @@ class _MethodPropertyRule(grammar.Rule):
 		start.connect(self._sub_1()).connect(end)
 		start.connect(self._sub_2()).connect(end)
 		start.connect(self._sub_3()).connect(end)
+		start.connect(self._sub_4()).connect(end)
 		
 	def transform(self, astNode):
 		
@@ -798,6 +802,14 @@ class _MethodPropertyRule(grammar.Rule):
 	def _sub_3_1(self):
 		
 		return grammar.tokenNode(KEY_27)
+		
+	def _sub_4(self):
+		
+		return self._sub_4_1()
+		
+	def _sub_4_1(self):
+		
+		return grammar.tokenNode(KEY_28)
 		
 class _EnumCodeRule(grammar.Rule):
 
@@ -963,7 +975,7 @@ class _FullTypeNameRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.zeroToOne(grammar.tokenNode(COLONCOLON, 'root'))
+		return grammar.zeroToOne(grammar.tokenNode(SLASH, 'root'))
 		
 	def _sub_1_2(self):
 		
@@ -1016,7 +1028,7 @@ class _FullTypeNameRule(grammar.Rule):
 		
 	def _sub_1_2_1_2_1_1(self):
 		
-		return grammar.tokenNode(COLONCOLON)
+		return grammar.tokenNode(SLASH)
 		
 	def _sub_1_2_1_2_1_2(self):
 		
@@ -1044,7 +1056,7 @@ class _FullTypeNameRule(grammar.Rule):
 		
 	def _sub_1_2_1_3(self):
 		
-		return grammar.tokenNode(COLONCOLON)
+		return grammar.tokenNode(SLASH)
 		
 	def _sub_1_3(self):
 		
@@ -1531,7 +1543,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_1_1(self):
 		
-		return grammar.tokenNode(KEY_28)
+		return grammar.tokenNode(KEY_29)
 		
 	def _sub_1_1_2(self):
 		
@@ -1539,7 +1551,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_2_1(self):
 		
-		return grammar.tokenNode(KEY_29)
+		return grammar.tokenNode(KEY_30)
 		
 	def _sub_1_2(self):
 		

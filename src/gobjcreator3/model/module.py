@@ -1,6 +1,6 @@
 class ModuleElement(object):
     
-    MODULE_SEP = '::'
+    MODULE_SEP = '/'
 
     def __init__(self, name):
         

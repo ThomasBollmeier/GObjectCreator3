@@ -1,15 +1,17 @@
 from gobjcreator3.preprocessor import PreProcessor
 from gobjcreator3.interpreter import Interpreter
 from gobjcreator3.ast_visitor import AstVisitor
-from gobjcreator3.parameter import FullTypeName, BuiltIn
+from gobjcreator3.parameter import FullTypeName, BuiltIn, RefTo, ListOf, Parameter as Param
+from gobjcreator3.misc import Scope, Visibility
 
 from gobjcreator3.model.module import Module, RootModule, ModuleElement
-from gobjcreator3.model.type import Type, BuiltIn as BuiltInType
+from gobjcreator3.model.type import Type, BuiltIn as BuiltInType, Reference, List
 from gobjcreator3.model.gobject import GObject
 from gobjcreator3.model.ginterface import GInterface
 from gobjcreator3.model.gerror import GError
 from gobjcreator3.model.genum import GEnum
 from gobjcreator3.model.gflags import GFlags
+from gobjcreator3.model.method import Method, Parameter
 
 class Compiler(object):
     
@@ -130,6 +132,33 @@ class CompileStep1(AstVisitor):
         
         self._root = root_module
         
+    def _get_param_type(self, arg_type):
+        
+        if  isinstance(arg_type, BuiltIn) or \
+            isinstance(arg_type, FullTypeName):
+            
+            res = self._get_type(arg_type)
+            if res is None:
+                raise Exception("Unknown type '%s'" % arg_type)
+            
+            return res
+        
+        elif isinstance(arg_type, RefTo):
+            
+            target_type = self._get_param_type(arg_type.ref_type)
+            
+            return Reference(target_type)
+        
+        elif isinstance(arg_type, ListOf):
+            
+            line_type = self._get_param_type(arg_type.element_type)
+            
+            return List(line_type)
+
+        else:
+            
+            raise Exception('Unsupported type!')
+        
     def _get_type(self, type_info):
         
         if isinstance(type_info, FullTypeName):
@@ -188,9 +217,7 @@ class CompileStep1(AstVisitor):
                       origin
                       ):
         
-        cur_module = self._module_stack[-1]
-        
-        self._gobject = cur_module.get_object(name)
+        self._gobject = self._module_stack[-1].get_object(name)
         
         if super_class:
             super = self._get_type(super_class)
@@ -200,38 +227,76 @@ class CompileStep1(AstVisitor):
         
         for intf_info in interfaces:
             intf = self._get_type(intf_info)
+            if intf is None or intf.category != Type.INTERFACE:
+                raise Exception("Interface type '%s' does not exist!" % intf_info)
+            self._gobject.interfaces.append(intf)
     
     def exit_gobject(self):
 
         self._gobject = None
     
     def enter_ginterface(self, name, origin):
-        pass
+        
+        self._ginterface = self._module_stack[-1].get_interface(name)
     
     def exit_ginterface(self):
-        pass    
-    
-    def visit_gerror(self, name, codes, origin):
-        pass
-    
-    def visit_genum(self, name, codeNamesValues, origin):
-        pass
-    
-    def visit_gflags(self, name, codes, origin):
-        pass
+        
+        self._ginterface = None    
     
     def visit_method(self, 
                      name, 
                      attributes,
                      parameters 
                      ):
-        pass
+        
+        if not attributes['overridden']:
+
+            method = Method(name)
+
+            method.visibility = {
+                                 Visibility.PUBLIC: Method.VISI_PUBLIC,
+                                 Visibility.PROTECTED: Method.VISI_PROTECTED,
+                                 Visibility.PRIVATE: Method.VISI_PRIVATE
+                                 }[attributes["visibility"]]
+            
+            if attributes["scope"] == Scope.CLASS:
+                method.set_static()
+            
+            if attributes["abstract"]:
+                method.set_abstract()
+            
+            if attributes["final"]:
+                method.set_final()
+                
+            method_params = []
+            for param in parameters:
+                name = param.name 
+                type_ = self._get_param_type(param.arg_type)
+                direction = {
+                             Param.IN: Parameter.IN,
+                             Param.OUT: Parameter.OUT,
+                             Param.IN_OUT: Parameter.IN_OUT
+                             }[param.category]
+                method_params.append(Parameter(name, type_, direction))
+                
+            method.parameters = method_params
+            
+            self._gobject.add_method(method)
+            
+        else:
+            
+            self._gobject.override(name)
     
     def visit_interface_method(self,
                                name,
                                parameters
                                ):
-        pass
+        
+        method = Method(name)
+        method.visibility = Method.VISI_PUBLIC
+        method.set_abstract()
+        
+        self._ginterface.add_method(method)
     
     def visit_attribute(self,
                         aname,

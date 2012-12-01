@@ -19,7 +19,7 @@ ginterface Human
 		<- direction: integer;
 }
 
-module bio::human 
+module bio/human 
 {
 	ginterface Human 
 	{
@@ -62,7 +62,7 @@ module demo
 
 	gobject Person 
 	{
-		implements ::Human, ..::bio::human::Human;
+		implements /Human, ../bio/human/Human;
 		
 		public methods 
 		{
@@ -76,7 +76,7 @@ module demo
 		
 		inherits from Person; // <-- super class
 		
-		implements ..::company::Employee; // <-- interface
+		implements /company/Employee; // <-- interface
 		
 		properties 
 		{
@@ -97,7 +97,7 @@ module demo
 		signals 
 		{
 			contract-signed
-				<- employee: company::Employee
+				<- employee: /company/Employee
 				<- user_data: any;
 		}
 		
@@ -107,14 +107,14 @@ module demo
 				<- last_name: string
 				<- first_name: string
 				<- id: unsigned integer
-				<-> error: ref(ref(GError))
+				<-> error: ref(ref(../glib/GError))
 				-> Worker;
 			do_something [overridden];
 			do_something_else 
 				<- what: integer
 				-> boolean;
 			get_team_members [static]
-				-> list(company::Employee);
+				-> list(/company/Employee);
 		} 
 		
 		private methods

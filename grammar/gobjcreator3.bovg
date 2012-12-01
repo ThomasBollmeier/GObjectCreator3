@@ -14,12 +14,12 @@ keyword PARENT_MODULE '..';
 separator LRARROW '<->';
 separator LARROW '<-';
 separator RARROW '->';
-separator COLONCOLON '::';
 separator ASSIGN '=';
 separator COLON ':';
 separator SEMICOLON ';';
 separator COMMA ',';
 separator DASH '-';
+separator SLASH '/';
 separator LSBRACKET '['; <!-- left square bracket -->
 separator RSBRACKET ']';
 separator LBRACE '{';
@@ -143,7 +143,7 @@ return outer_module
 
 <!----------------------------------------------------------------------------->
 
-module_name = name=ID (COLONCOLON name=ID)*;
+module_name = name=ID (SLASH name=ID)*;
 
 % module_name {
 
@@ -296,7 +296,7 @@ return res
 <!----------------------------------------------------------------------------->
 
 full_type_name = 
-	root=COLONCOLON? (module=(ID|PARENT_MODULE) (COLONCOLON module=(ID|PARENT_MODULE))* COLONCOLON)? name=ID
+	root=SLASH? (module=(ID|PARENT_MODULE) (SLASH module=(ID|PARENT_MODULE))* SLASH)? name=ID
 	;
 % full_type_name {
 res = AstNode(self.getName())
@@ -563,7 +563,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-method_property = 'static' | 'abstract' | 'overridden';
+method_property = 'static' | 'abstract' | 'overridden' | 'final';
 % method_property {
 name = astNode.getChildren()[0].getText()
 

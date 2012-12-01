@@ -1,12 +1,12 @@
 include <glib.goc3>;
 
-module os::threading {
+module os/threading {
 
 	gobject Thread {}
 
 }
 
-module demo::taskmgmt
+module demo/taskmgmt
 {
 	typedecl WorkList;
 	typedecl TaskId;

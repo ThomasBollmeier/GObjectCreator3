@@ -202,7 +202,8 @@ class Interpreter(object):
         attributes = {"visibility": visibility}
         attributes["scope"] = props and props["static"] and Scope.CLASS or Scope.INSTANCE
         attributes["abstract"] = props and props["abstract"] and True or False
-        attributes["overriden"] = props and props["overridden"] and True or False
+        attributes["overridden"] = props and props["overridden"] and True or False
+        attributes["final"] = props and props["final"] and True or False
         
         parameters = []
         
