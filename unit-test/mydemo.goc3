@@ -40,6 +40,8 @@ module company
 		set_salary
 			<- salary: double;
 	} 
+	
+	gobject Team {}
 
 }
 
@@ -48,7 +50,7 @@ module demo
 
 	typedecl MyInt;
 
-	gerror Error { FAILURE, NOT_FOUND, INVALID	}
+	gerror Error { FAILURE, NOT_FOUND, INVALID }
 	
 	genum Status 
 	{ 
@@ -69,6 +71,11 @@ module demo
 			do_something [abstract]
 				-> boolean;
 		}
+		
+		public attributes 
+		{
+			surname: string;
+		}
 	}
 
 	gobject Worker
@@ -76,7 +83,7 @@ module demo
 		
 		inherits from Person; // <-- super class
 		
-		implements /company/Employee; // <-- interface
+		implements company/Employee; // <-- interface
 		
 		properties 
 		{
@@ -92,12 +99,19 @@ module demo
 				description = 'worker\'s name'
 			}
 			
+			team 
+			{
+				access = read-only,
+				type = object,
+				gtype = gtypeof(company/Team)
+			}
+			
 		}
 		
 		signals 
 		{
 			contract-signed
-				<- employee: /company/Employee
+				<- employee: company/Employee
 				<- user_data: any;
 		}
 		
@@ -114,7 +128,7 @@ module demo
 				<- what: integer
 				-> boolean;
 			get_team_members [static]
-				-> list(/company/Employee);
+				-> list(company/Employee);
 		} 
 		
 		private methods

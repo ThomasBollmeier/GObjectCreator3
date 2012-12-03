@@ -1,6 +1,8 @@
-#from gobjcreator3.module import Module
 from gobjcreator3.parameter import Parameter, BuiltIn, FullTypeName, ListOf, RefTo
-from gobjcreator3.misc import Visibility, Scope, PropertyAccess
+from gobjcreator3.misc import PropGTypeInfo
+from gobjcreator3.model.visibility import Visibility
+from gobjcreator3.model.property import PropType, PropAccess
+ 
 
 class Interpreter(object):
     
@@ -27,9 +29,21 @@ class Interpreter(object):
                           "private": Visibility.PRIVATE
                           }
         
-        self._prop_access_map = {"read-only": PropertyAccess.READ_ONLY,
-                                 "initial-write": PropertyAccess.INITIAL_WRITE,
-                                 "read-write": PropertyAccess.READ_WRITE
+        self._prop_type_map = {
+                               "boolean": PropType.BOOLEAN,
+                               "byte": PropType.BYTE,
+                               "integer": PropType.INTEGER,
+                               "float": PropType.FLOAT,
+                               "double": PropType.DOUBLE,
+                               "string": PropType.STRING,
+                               "pointer": PropType.POINTER,
+                               "object": PropType.OBJECT,
+                               "enumeration": PropType.ENUMERATION
+                               }
+        
+        self._prop_access_map = {"read-only": PropAccess.READ_ONLY,
+                                 "initial-write": PropAccess.INITIAL_WRITE,
+                                 "read-write": PropAccess.READ_WRITE
                                  }
     
     def eval_grammar(self, ast, visitor):
@@ -200,7 +214,7 @@ class Interpreter(object):
         props = ast["properties"]
         
         attributes = {"visibility": visibility}
-        attributes["scope"] = props and props["static"] and Scope.CLASS or Scope.INSTANCE
+        attributes["static"] = props and props["static"] and True or False
         attributes["abstract"] = props and props["abstract"] and True or False
         attributes["overridden"] = props and props["overridden"] and True or False
         attributes["final"] = props and props["final"] and True or False
@@ -241,7 +255,7 @@ class Interpreter(object):
         
         props = attr["properties"]  
         aattrs = {"visibility": visibility}
-        aattrs["scope"] = props and props["static"] and Scope.CLASS or Scope.INSTANCE
+        aattrs["static"] = props and props["static"] and True or False
         
         type_node = attr.getChildren()[1]
         if type_node.getName() == "builtin_type":
@@ -260,12 +274,32 @@ class Interpreter(object):
                 cname = child.getName()
                 if cname == "name":
                     name = child.getText()
+                elif cname == "type":
+                    attrs["type"] = self._prop_type_map[child.getText()]
                 elif cname == "access":
                     attrs["access"] = self._prop_access_map[child.getText()]
                 elif cname == "description":
                     attrs["description"] = child.getText()
+                elif cname == "gtype":
+                    attrs["gtype"] = self._eval_prop_gtype(child)
             visitor.visit_property(name, attrs)
             
+    def _eval_prop_gtype(self, ast):
+        
+        res = PropGTypeInfo()
+        
+        type_of_node = ast["type_of"]
+        if type_of_node:
+            type_node = type_of_node.getChildren()[0]
+            if type_node.getName() == "full_type_name":
+                res.full_type_name = self._eval_full_type_name(type_node)
+            else:
+                res.full_type_name = BuiltIn(type_node.getText())
+        else:
+            res.g_type_id = ast["id"].getText() 
+        
+        return res
+                            
     def _eval_signals(self, ast, visitor):
         
         for signalNode in ast.getChildrenByName("signal"):

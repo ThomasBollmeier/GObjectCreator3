@@ -1,12 +1,13 @@
 <!-- Grammar of GObjectCreator3 -->
 
-enable full-backtracking;
+<!-- enable full-backtracking; -->
 
 line-comment-style '//';
 block-comment-style '/*' '*/';
 
 literal LITERAL;
 word ID '[a-zA-Z_][a-zA-Z0-9_]*';
+word G_TYPE_NAME '[A-Z][A-Z0-9_]*';
 word FILE_PATH '[^>]+';
 word UINT '[1-9][0-9]*|0';
 keyword PARENT_MODULE '..';
@@ -354,9 +355,32 @@ return AstNode('name', text)
 
 <!----------------------------------------------------------------------------->
 
-prop_content = prop_access | prop_description;
+prop_content = 
+	prop_type | 
+	prop_access | 
+	prop_description |
+	prop_gtype
+	;
 % prop_content {
 return astNode.getChildren()[0]
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_type = 'type' ASSIGN value=(
+	'boolean' |
+	'byte' |
+	'integer' |
+	'float' |
+	'double' |
+	'string' |
+	'pointer' |
+	'object' |
+	'enumeration'
+	);
+
+% prop_type {
+return AstNode('type', astNode['#value'].getText())
 % }
 
 <!----------------------------------------------------------------------------->
@@ -377,6 +401,31 @@ prop_description = 'description' ASSIGN value=LITERAL;
 value = astNode.getChildById('value')
 
 return AstNode('description', value.getText())
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_gtype = 'gtype' ASSIGN (
+	id=G_TYPE_NAME |
+	'gtypeof' LPAR typeName=full_type_name RPAR
+	);
+	
+% prop_gtype {
+
+res = AstNode('gtype')
+
+idNode = astNode['#id'] 
+if idNode:
+	res.addChild(AstNode('id', idNode.getText()))
+else:
+	child = AstNode('type_of')
+	typeNameNode = astNode['#typeName']
+	typeNameNode.setId('')
+	child.addChild(typeNameNode)
+	res.addChild(child)
+
+return res
+
 % }
 
 <!----------------------------------------------------------------------------->

@@ -2,7 +2,6 @@ from gobjcreator3.preprocessor import PreProcessor
 from gobjcreator3.interpreter import Interpreter
 from gobjcreator3.ast_visitor import AstVisitor
 from gobjcreator3.parameter import FullTypeName, BuiltIn, RefTo, ListOf, Parameter as Param
-from gobjcreator3.misc import Scope, Visibility
 
 from gobjcreator3.model.module import Module, RootModule, ModuleElement
 from gobjcreator3.model.type import Type, BuiltIn as BuiltInType, Reference, List
@@ -11,7 +10,10 @@ from gobjcreator3.model.ginterface import GInterface
 from gobjcreator3.model.gerror import GError
 from gobjcreator3.model.genum import GEnum
 from gobjcreator3.model.gflags import GFlags
+from gobjcreator3.model.property import Property, PropAccess, PropGTypeValue
 from gobjcreator3.model.method import Method, Parameter
+from gobjcreator3.model.attribute import Attribute
+from gobjcreator3.model.visibility import Visibility
 
 class Compiler(object):
     
@@ -189,6 +191,14 @@ class CompileStep1(AstVisitor):
             
             raise Exception('Unsupported type!')
         
+    def _get_gtype(self, gtype_info):
+        
+        gtype_id = gtype_info.gtype_id
+        if gtype_info.full_type_name:
+            type_ = self._get_type(gtype_info.full_type_name)
+                
+        return PropGTypeValue(gtype_id, type_)
+        
     # Visitor methods:
     
     def enter_grammar(self):
@@ -253,13 +263,9 @@ class CompileStep1(AstVisitor):
 
             method = Method(name)
 
-            method.visibility = {
-                                 Visibility.PUBLIC: Method.VISI_PUBLIC,
-                                 Visibility.PROTECTED: Method.VISI_PROTECTED,
-                                 Visibility.PRIVATE: Method.VISI_PRIVATE
-                                 }[attributes["visibility"]]
+            method.visibility = attributes["visibility"]
             
-            if attributes["scope"] == Scope.CLASS:
+            if attributes["static"]:
                 method.set_static()
             
             if attributes["abstract"]:
@@ -269,15 +275,21 @@ class CompileStep1(AstVisitor):
                 method.set_final()
                 
             method_params = []
+            has_result = False
             for param in parameters:
-                name = param.name 
-                type_ = self._get_param_type(param.arg_type)
+                pname = param.name 
+                ptype = self._get_param_type(param.arg_type)
                 direction = {
                              Param.IN: Parameter.IN,
                              Param.OUT: Parameter.OUT,
                              Param.IN_OUT: Parameter.IN_OUT
                              }[param.category]
-                method_params.append(Parameter(name, type_, direction))
+                if direction == Parameter.OUT:
+                    if not has_result:
+                        has_result = True
+                    else:
+                        raise Exception("Method '%s' must only have one result parameter!" % name)
+                method_params.append(Parameter(pname, ptype, direction))
                 
             method.parameters = method_params
             
@@ -293,7 +305,7 @@ class CompileStep1(AstVisitor):
                                ):
         
         method = Method(name)
-        method.visibility = Method.VISI_PUBLIC
+        method.visibility = Visibility.PUBLIC
         method.set_abstract()
         
         self._ginterface.add_method(method)
@@ -303,15 +315,54 @@ class CompileStep1(AstVisitor):
                         atype,
                         aattributes
                         ):
-        pass
+        
+        name = aname
+        type_ = self._get_param_type(atype)
+        visi = aattributes["visibility"]
+        is_static = aattributes["static"]
+        
+        self._gobject.add_attribute(Attribute(name, type_, visi, is_static))
     
     def visit_property(self,
                        name,
                        attributes
                        ):
         
-        pass
-    
+        pname = name
+        try:
+            ptype = attributes["type"]
+        except:
+            ptype = None
+        try:
+            access = attributes["access"]
+        except:
+            access = PropAccess.READ_ONLY
+        try:
+            description = attributes["description"]
+        except:
+            description = ""
+        try:
+            gtype = self._get_gtype(attributes["gtype"])
+        except:
+            gtype = None
+        min_ = None
+        max_ = None
+        default = None
+        auto_create = False
+        
+        prop = Property(pname, 
+                        ptype,
+                        access,
+                        description,
+                        gtype,
+                        min_,
+                        max_,
+                        default,
+                        auto_create
+                        )   
+        
+        self._gobject.add_property(prop)  
+        
     def visit_signal(self,
                      name,
                      parameters

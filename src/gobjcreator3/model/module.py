@@ -139,11 +139,14 @@ class Module(ModuleElement):
         if not path:
             return self
         
+        root = self.get_root()
+        start_modules = []
+        
         names = path.split(ModuleElement.MODULE_SEP)
         if names[0]:
-            parent_module = self 
+            start_modules = [self, root] # <-- search first in current module, secondly in root
         else: # absolute path:
-            parent_module = self.get_root()
+            start_modules = [root]
             names = names[1:]
             
         if len(names) == 1:
@@ -153,18 +156,24 @@ class Module(ModuleElement):
             element_name = names[-1]
             module_names = names[:-1]
             
-        for module_name in module_names:
-            if module_name != Module.PARENT:
-                parent_module = parent_module._get_element(module_name)
-            else:
-                parent_module = parent_module.module
-            if not isinstance(parent_module, Module):
-                raise Exception("'%s' is not a module!" % module_name)
+        for start_module in start_modules:
             
-        try:
-            return parent_module._elements_d[element_name]      
-        except KeyError:
-            return None
+            parent_module = start_module
+            
+            for module_name in module_names:
+                if module_name != Module.PARENT:
+                    parent_module = parent_module._get_element(module_name)
+                else:
+                    parent_module = parent_module.module
+                if start_module is root and not isinstance(parent_module, Module):
+                    raise Exception("'%s' is not a module!" % module_name)
+                
+            try:
+                return parent_module._elements_d[element_name]      
+            except KeyError:
+                pass
+            
+        return None
 
     def _get_type_elements(self, category):
         

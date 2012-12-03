@@ -33,10 +33,16 @@ class CompilerTest(unittest.TestCase):
 
         worker = demo.get_object("Worker")
         print([(i.get_fullname(), i.filepath_origin) for i in worker.interfaces])
-        method = worker.get_method("create")
+        method = worker.get_method("get_team_members")
+        print("Static: %s" % method.is_static)
+        print("Final: %s" % method.is_final)
         for p in method.parameters:
             print("%s: %s" % (p.name, p.type))
-        
+        for a in worker.get_attributes():
+            print("%s: %s" % (a.name, a.type)) 
+        for p in worker.get_properties():
+            print("Property: %s, Type: %s, GType: %s" % (p.name, p.type, p.gtype))
+                    
         thread = demo.get_type_element("../os/threading/Thread")
         print(thread)
         print(thread.category == Type.OBJECT)
