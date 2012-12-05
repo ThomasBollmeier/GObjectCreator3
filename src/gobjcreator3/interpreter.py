@@ -282,6 +282,8 @@ class Interpreter(object):
                     attrs["description"] = child.getText()
                 elif cname == "gtype":
                     attrs["gtype"] = self._eval_prop_gtype(child)
+                elif cname == "auto-create":
+                    attrs["auto-create"] = True
             visitor.visit_property(name, attrs)
             
     def _eval_prop_gtype(self, ast):

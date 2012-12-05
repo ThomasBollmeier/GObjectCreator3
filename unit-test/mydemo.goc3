@@ -77,6 +77,8 @@ module demo
 			surname: string;
 		}
 	}
+	
+	genum WorkerStatus { FREE, BUSY, OUT_OF_OFFICE }
 
 	gobject Worker
 	{
@@ -96,7 +98,8 @@ module demo
 			full-name 
 			{
 				access = read-only,
-				description = 'worker\'s name'
+				description = 'worker\'s name',
+				auto-create
 			}
 			
 			team 
@@ -104,6 +107,16 @@ module demo
 				access = read-only,
 				type = object,
 				gtype = gtypeof(company/Team)
+			}
+			
+			status 
+			{
+				access = read-only,
+				type = enumeration,
+				gtype = gtypeof(WorkerStatus),
+				default = WorkerStatus.FREE,
+				min = "Hallo Welt",
+				max = 42
 			}
 			
 		}

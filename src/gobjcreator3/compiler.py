@@ -348,7 +348,10 @@ class CompileStep1(AstVisitor):
         min_ = None
         max_ = None
         default = None
-        auto_create = False
+        try:
+            auto_create = attributes["auto-create"]
+        except:
+            auto_create = False
         
         prop = Property(pname, 
                         ptype,

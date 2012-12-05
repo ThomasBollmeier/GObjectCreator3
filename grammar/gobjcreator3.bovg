@@ -8,18 +8,22 @@ block-comment-style '/*' '*/';
 literal LITERAL;
 word ID '[a-zA-Z_][a-zA-Z0-9_]*';
 word G_TYPE_NAME '[A-Z][A-Z0-9_]*';
-word FILE_PATH '[^>]+';
+word FILE_NAME_PART '[^>]+';
 word UINT '[1-9][0-9]*|0';
-keyword PARENT_MODULE '..';
+word POS_NUMBER '[1-9][0-9]*';
+word NUMBER '[0-9]+';
+word ZERO '0';
 
 separator LRARROW '<->';
 separator LARROW '<-';
 separator RARROW '->';
+separator PARENT_MODULE '..';
 separator ASSIGN '=';
 separator COLON ':';
 separator SEMICOLON ';';
 separator COMMA ',';
 separator DASH '-';
+separator DOT '.';
 separator SLASH '/';
 separator LSBRACKET '['; <!-- left square bracket -->
 separator RSBRACKET ']';
@@ -69,7 +73,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-inclpath = LITERAL | LABRACKET FILE_PATH RABRACKET;
+inclpath = LITERAL | LABRACKET file_path RABRACKET;
 % inclpath {
 
 res = AstNode(self.getName())
@@ -85,6 +89,20 @@ else:
 
 return res
 % }
+
+<!----------------------------------------------------------------------------->
+
+file_path = FILE_NAME_PART? (DOT FILE_NAME_PART)*;
+
+% file_path {
+
+filepath = ""
+for child in astNode.getChildren():
+	filepath += child.getText()
+	
+return AstNode('file_path', filepath)
+
+% } 
 	
 <!----------------------------------------------------------------------------->
 
@@ -359,7 +377,9 @@ prop_content =
 	prop_type | 
 	prop_access | 
 	prop_description |
-	prop_gtype
+	prop_gtype |
+	prop_value |
+	prop_auto_create
 	;
 % prop_content {
 return astNode.getChildren()[0]
@@ -425,6 +445,76 @@ else:
 	res.addChild(child)
 
 return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_value = 
+	lhs=( 'max' | 'min' | 'default' ) ASSIGN rhs=( LITERAL | number | code_value );
+	
+% prop_value {
+
+lhs = astNode['#lhs']
+rhs = astNode['#rhs']
+
+if rhs.getName() != 'token':
+	rhs.setId('')
+	child = rhs
+else:
+	child = AstNode('literal', rhs.getText())
+
+res = AstNode(lhs.getText())
+res.addChild(child)
+
+return res
+
+% }	
+
+<!----------------------------------------------------------------------------->
+
+number = digits=( ZERO | POS_NUMBER ) ( DOT decimals=NUMBER )?; 
+
+% number {
+
+res = AstNode('number')
+
+res.addChild(AstNode('digits', astNode['#digits'].getText()))
+
+decimals = astNode['#decimals']
+if decimals:
+	res.addChild(AstNode('decimals', decimals.getText()))
+
+return res 
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+code_value = enum=full_type_name DOT code=ID;
+
+% code_value {
+
+res = AstNode('code_value')
+
+enum = astNode['#enum']
+enum.setId('')
+res.addChild(enum)
+
+code = astNode['#code']
+res.addChild(AstNode('code', code.getText()))
+
+return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_auto_create = 'auto' DASH 'create';
+
+% prop_auto_create {
+
+return AstNode('auto-create')
 
 % }
 

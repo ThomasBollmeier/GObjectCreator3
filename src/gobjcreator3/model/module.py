@@ -159,14 +159,22 @@ class Module(ModuleElement):
         for start_module in start_modules:
             
             parent_module = start_module
+            failed = False
             
             for module_name in module_names:
                 if module_name != Module.PARENT:
                     parent_module = parent_module._get_element(module_name)
                 else:
                     parent_module = parent_module.module
-                if start_module is root and not isinstance(parent_module, Module):
-                    raise Exception("'%s' is not a module!" % module_name)
+                if not isinstance(parent_module, Module):
+                    if start_module is root:
+                        raise Exception("'%s' is not a module!" % module_name)
+                    else:
+                        failed = True
+                        break
+                    
+            if failed:
+                continue
                 
             try:
                 return parent_module._elements_d[element_name]      
