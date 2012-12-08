@@ -126,11 +126,11 @@ class TestVisitor(AstVisitor):
             self._indent()    
             for param in parameters:
                 if param.category == Parameter.IN:
-                    self._write("%s: %s (IN)" % (param.name, param.arg_type))
+                    self._write("%s: %s (IN) %s" % (param.name, param.arg_type, param.properties))
                 elif param.category == Parameter.IN_OUT:
-                    self._write("%s: %s (INOUT)" % (param.name, param.arg_type))
+                    self._write("%s: %s (INOUT) %s" % (param.name, param.arg_type, param.properties))
                 elif param.category == Parameter.OUT:
-                    self._write("%s (OUT)" % param.arg_type)
+                    self._write("%s (OUT) %s" % (param.arg_type, param.properties))
             self._dedent()
         self._dedent()
         
@@ -143,11 +143,11 @@ class TestVisitor(AstVisitor):
             self._indent()    
             for param in parameters:
                 if param.category == Parameter.IN:
-                    self._write("%s: %s (IN)" % (param.name, param.arg_type))
+                    self._write("%s: %s (IN) %s" % (param.name, param.arg_type, param.properties))
                 elif param.category == Parameter.IN_OUT:
-                    self._write("%s: %s (INOUT)" % (param.name, param.arg_type))
+                    self._write("%s: %s (INOUT) %s" % (param.name, param.arg_type, param.properties))
                 elif param.category == Parameter.OUT:
-                    self._write("%s (OUT)" % param.arg_type)
+                    self._write("%s (OUT) %s" % (param.arg_type, param.properties))
             self._dedent()
         self._dedent()
         
@@ -167,7 +167,7 @@ class TestVisitor(AstVisitor):
             self._write("Parameters:")
             self._indent()    
             for param in parameters:
-                self._write("%s: %s" % (param.name, param.arg_type))
+                self._write("%s: %s %s" % (param.name, param.arg_type, param.properties))
             self._dedent()
         self._dedent()
                             

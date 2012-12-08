@@ -136,29 +136,7 @@ class Interpreter(object):
         
         name = method['name'].getText()
         
-        parameters = []
-        
-        for child in method.getChildren():
-            
-            catg_name = child.getName()
-            
-            if catg_name == "in_param":
-                category = Parameter.IN
-                pname = child["name"].getText()
-                argtype_node = child.getChildren()[1]
-            elif catg_name == "inout_param":
-                category = Parameter.IN_OUT
-                pname = child["name"].getText()
-                argtype_node = child.getChildren()[1]
-            elif catg_name == "out_param":
-                category = Parameter.OUT
-                pname = ""
-                argtype_node = child.getChildren()[0]
-            else:
-                continue
-            argtype = self._eval_arg_type(argtype_node)
-                        
-            parameters.append(Parameter(pname, argtype, category))
+        parameters = self._get_method_parameters(method)
             
         visitor.visit_interface_method(name, parameters)
         
@@ -219,9 +197,15 @@ class Interpreter(object):
         attributes["overridden"] = props and props["overridden"] and True or False
         attributes["final"] = props and props["final"] and True or False
         
+        parameters = self._get_method_parameters(ast)
+
+        visitor.visit_method(name, attributes, parameters)
+        
+    def _get_method_parameters(self, method):
+        
         parameters = []
         
-        for child in ast.getChildren():
+        for child in method.getChildren():
             catg_name = child.getName()
             if catg_name == "in_param":
                 category = Parameter.IN
@@ -238,10 +222,20 @@ class Interpreter(object):
             else:
                 continue
             argtype = self._eval_arg_type(argtype_node)
-                        
-            parameters.append(Parameter(pname, argtype, category))
-        
-        visitor.visit_method(name, attributes, parameters)
+                
+            param = Parameter(pname, argtype, category)
+            
+            props = child["properties"]
+            if props:
+                for p in props.getChildren():
+                    param_prop_name = p.getName()
+                    param.properties[param_prop_name] = {
+                                                         "const" : True
+                                                         }[param_prop_name]
+                
+            parameters.append(param)
+            
+        return parameters
         
     def _eval_attr_section(self, ast, visitor):
         
@@ -306,11 +300,7 @@ class Interpreter(object):
         
         for signalNode in ast.getChildrenByName("signal"):
             name = signalNode["name"].getText()
-            parameters = []
-            for paramNode in signalNode.getChildrenByName("in_param"):
-                pname = paramNode["name"].getText()
-                ptype = self._eval_arg_type(paramNode.getChildren()[1])
-                parameters.append(Parameter(pname, ptype, Parameter.IN))
+            parameters = self._get_method_parameters(signalNode)
             visitor.visit_signal(name, parameters)
                     
     def _eval_arg_type(self, argtype_node):

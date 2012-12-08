@@ -11,6 +11,7 @@ from gobjcreator3.model.gerror import GError
 from gobjcreator3.model.genum import GEnum
 from gobjcreator3.model.gflags import GFlags
 from gobjcreator3.model.property import Property, PropAccess, PropGTypeValue
+from gobjcreator3.model.signal import Signal
 from gobjcreator3.model.method import Method, Parameter
 from gobjcreator3.model.attribute import Attribute
 from gobjcreator3.model.visibility import Visibility
@@ -198,6 +199,34 @@ class CompileStep1(AstVisitor):
             type_ = self._get_type(gtype_info.full_type_name)
                 
         return PropGTypeValue(gtype_id, type_)
+    
+    def _get_parameters(self, method_name, parameters):
+        
+        res = []
+        
+        has_result = False
+        for param in parameters:
+            pname = param.name 
+            ptype = self._get_param_type(param.arg_type)
+            direction = {
+                         Param.IN: Parameter.IN,
+                         Param.OUT: Parameter.OUT,
+                         Param.IN_OUT: Parameter.IN_OUT
+                         }[param.category]
+            if direction == Parameter.OUT:
+                if not has_result:
+                    has_result = True
+                else:
+                    raise Exception("Method '%s' must only have one result parameter!" % method_name)
+                
+            param_obj = Parameter(pname, ptype, direction)
+            
+            if "const" in param.properties:
+                param_obj.modifiers.append("const")
+                                 
+            res.append(param_obj)
+            
+        return res
         
     # Visitor methods:
     
@@ -230,10 +259,10 @@ class CompileStep1(AstVisitor):
         self._gobject = self._module_stack[-1].get_object(name)
         
         if super_class:
-            super = self._get_type(super_class)
-            if super is None or super.category != Type.OBJECT:
+            super_ = self._get_type(super_class)
+            if super_ is None or super_.category != Type.OBJECT:
                 raise Exception("Super type '%s' does not exist or is not a class!" % super_class)
-            self._gobject.super_class = super
+            self._gobject.super_class = super_
         
         for intf_info in interfaces:
             intf = self._get_type(intf_info)
@@ -274,24 +303,7 @@ class CompileStep1(AstVisitor):
             if attributes["final"]:
                 method.set_final()
                 
-            method_params = []
-            has_result = False
-            for param in parameters:
-                pname = param.name 
-                ptype = self._get_param_type(param.arg_type)
-                direction = {
-                             Param.IN: Parameter.IN,
-                             Param.OUT: Parameter.OUT,
-                             Param.IN_OUT: Parameter.IN_OUT
-                             }[param.category]
-                if direction == Parameter.OUT:
-                    if not has_result:
-                        has_result = True
-                    else:
-                        raise Exception("Method '%s' must only have one result parameter!" % name)
-                method_params.append(Parameter(pname, ptype, direction))
-                
-            method.parameters = method_params
+            method.parameters = self._get_parameters(name, parameters)
             
             self._gobject.add_method(method)
             
@@ -307,6 +319,8 @@ class CompileStep1(AstVisitor):
         method = Method(name)
         method.visibility = Visibility.PUBLIC
         method.set_abstract()
+        
+        method.parameters = self._get_parameters(name, parameters)
         
         self._ginterface.add_method(method)
     
@@ -370,5 +384,7 @@ class CompileStep1(AstVisitor):
                      name,
                      parameters
                      ):
-        pass
+        
+        signal = Signal(name, self._get_parameters(name, parameters))
+        self._gobject.add_signal(signal)
     

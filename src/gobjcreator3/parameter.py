@@ -68,5 +68,6 @@ class Parameter(object):
         self.name = name
         self.arg_type = arg_type
         self.category = category
+        self.properties = {}
         
         

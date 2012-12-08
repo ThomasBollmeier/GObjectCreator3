@@ -14,7 +14,7 @@ ginterface Human
 	eat;
 	sleep;
 	talk
-		<- message: string;
+		<- message: string [const];
 	walk
 		<- direction: integer;
 }
@@ -124,16 +124,16 @@ module demo
 		signals 
 		{
 			contract-signed
-				<- employee: company/Employee
+				<- employee: company/Employee [const]
 				<- user_data: any;
 		}
 		
 		public methods 
 		{
 			create [static]
-				<- last_name: string
-				<- first_name: string
-				<- id: unsigned integer
+				<- last_name: string [const]
+				<- first_name: string [const]
+				<- id: unsigned integer [const]
 				<-> error: ref(ref(../glib/GError))
 				-> Worker;
 			do_something [overridden];

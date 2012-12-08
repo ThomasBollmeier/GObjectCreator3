@@ -42,7 +42,11 @@ class CompilerTest(unittest.TestCase):
             print("%s: %s" % (a.name, a.type)) 
         for p in worker.get_properties():
             print("Property: %s, Type: %s, GType: %s" % (p.name, p.type, p.gtype))
-                    
+        for s in worker.get_signals():
+            print("Signal: %s" % s.name)
+            for p in s.parameters:
+                print("\t%s %s %s" % (p.name, p.type, p.modifiers))
+                                      
         thread = demo.get_type_element("../os/threading/Thread")
         print(thread)
         print(thread.category == Type.OBJECT)

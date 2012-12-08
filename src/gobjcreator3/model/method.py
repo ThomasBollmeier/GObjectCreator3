@@ -53,3 +53,4 @@ class Parameter(object):
         self.name = name
         self.type = type_
         self.direction = direction
+        self.modifiers = []

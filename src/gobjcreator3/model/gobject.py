@@ -125,10 +125,34 @@ class GObject(ClsIntf):
             
         return res
     
+    def add_signal(self, signal):
+        
+        cls = self
+        while cls:
+            if signal.name in cls._signals_d:
+                raise Exception("Signal '%s' has already been defined in '%s'!" % (signal.name, cls))
+            cls = cls.super_class
+        
+        self._signals_d[signal.name] = signal    
+        self._signals.append(signal)
+
+    def get_signals(self, include_inherited=False):
+        
+        res = self._signals
+        
+        if not include_inherited:
+            return res
+        
+        cls = self.super_class
+        while cls:
+            res = cls._signals + res
+            cls = cls.super_class
+            
+        return res
+            
 class MethodInfo(object):
     
     def __init__(self, method, def_origin):
         
         self.method = method
         self.def_origin = def_origin
-        

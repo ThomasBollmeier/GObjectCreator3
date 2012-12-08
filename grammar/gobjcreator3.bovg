@@ -652,37 +652,74 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-in_param = LARROW name=ID COLON type=argtype;
+in_param = LARROW name=ID COLON type=argtype props=param_properties?;
 % in_param {
 res = AstNode(self.getName())
 res.addChild(AstNode('name', astNode['#name'].getText()))
 type_ = astNode['#type']
 type_.setId('')
 res.addChild(type_)
+props = astNode['#props']
+if props:
+	props.setId('')
+	res.addChild(props)
 return res
 % }
 
 <!----------------------------------------------------------------------------->
 
-inout_param = LRARROW name=ID COLON type=argtype;
+inout_param = LRARROW name=ID COLON type=argtype props=param_properties?;
 % inout_param {
 res = AstNode(self.getName())
 res.addChild(AstNode('name', astNode['#name'].getText()))
 type_ = astNode['#type']
 type_.setId('')
 res.addChild(type_)
+props = astNode['#props']
+if props:
+	props.setId('')
+	res.addChild(props)
 return res
 % }
 
 <!----------------------------------------------------------------------------->
 
-out_param = RARROW type=argtype;
+out_param = RARROW type=argtype props=param_properties?;
 % out_param {
 res = AstNode(self.getName())
 type_ = astNode['#type']
 type_.setId('')
 res.addChild(type_)
+props = astNode['#props']
+if props:
+	props.setId('')
+	res.addChild(props)
 return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+param_properties = LSBRACKET prop=param_property (COMMA prop=param_property)* RSBRACKET;
+
+% param_properties {
+
+res = AstNode('properties')
+
+for prop in astNode.getChildrenById('prop'):
+	prop.setId('')
+	res.addChild(prop)
+
+return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+param_property = 'const';
+
+% param_property {
+name = astNode.getChildren()[0].getText()
+return AstNode(name)
 % }
 
 <!----------------------------------------------------------------------------->

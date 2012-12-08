@@ -228,29 +228,32 @@ all_token_types.append(KEY_40)
 KEY_41 = token.Keyword('private', caseSensitive=True)
 all_token_types.append(KEY_41)
 
-KEY_42 = token.Keyword('static', caseSensitive=True)
+KEY_42 = token.Keyword('const', caseSensitive=True)
 all_token_types.append(KEY_42)
 
-KEY_43 = token.Keyword('abstract', caseSensitive=True)
+KEY_43 = token.Keyword('static', caseSensitive=True)
 all_token_types.append(KEY_43)
 
-KEY_44 = token.Keyword('overridden', caseSensitive=True)
+KEY_44 = token.Keyword('abstract', caseSensitive=True)
 all_token_types.append(KEY_44)
 
-KEY_45 = token.Keyword('final', caseSensitive=True)
+KEY_45 = token.Keyword('overridden', caseSensitive=True)
 all_token_types.append(KEY_45)
 
-KEY_46 = token.Keyword('ref', caseSensitive=True)
+KEY_46 = token.Keyword('final', caseSensitive=True)
 all_token_types.append(KEY_46)
 
-KEY_47 = token.Keyword('list', caseSensitive=True)
+KEY_47 = token.Keyword('ref', caseSensitive=True)
 all_token_types.append(KEY_47)
 
-KEY_48 = token.Keyword('unsigned', caseSensitive=True)
+KEY_48 = token.Keyword('list', caseSensitive=True)
 all_token_types.append(KEY_48)
 
-KEY_49 = token.Keyword('any', caseSensitive=True)
+KEY_49 = token.Keyword('unsigned', caseSensitive=True)
 all_token_types.append(KEY_49)
+
+KEY_50 = token.Keyword('any', caseSensitive=True)
+all_token_types.append(KEY_50)
 
 class _PropTypeRule(grammar.Rule):
 
@@ -552,7 +555,7 @@ class _AttrPropertyRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_42)
+		return grammar.tokenNode(KEY_43)
 		
 class _GflagsRule(grammar.Rule):
 
@@ -679,6 +682,29 @@ class _FilePathRule(grammar.Rule):
 	def _sub_1_2_1_2(self):
 		
 		return grammar.tokenNode(FILE_NAME_PART)
+		
+class _ParamPropertyRule(grammar.Rule):
+
+	def __init__(self, ident=''):
+	
+		grammar.Rule.__init__(self, 'param_property', ident)
+		
+	def expand(self, start, end, context):
+		
+		start.connect(self._sub_1()).connect(end)
+		
+	def transform(self, astNode):
+		
+		name = astNode.getChildren()[0].getText()
+		return AstNode(name)
+		
+	def _sub_1(self):
+		
+		return self._sub_1_1()
+		
+	def _sub_1_1(self):
+		
+		return grammar.tokenNode(KEY_42)
 		
 class _NumberRule(grammar.Rule):
 
@@ -807,7 +833,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_3_1(self):
 		
-		return grammar.zeroToOne(grammar.tokenNode(KEY_48))
+		return grammar.zeroToOne(grammar.tokenNode(KEY_49))
 		
 	def _sub_3_2(self):
 		
@@ -835,7 +861,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_6_1(self):
 		
-		return grammar.tokenNode(KEY_49)
+		return grammar.tokenNode(KEY_50)
 		
 class _PropAutoCreateRule(grammar.Rule):
 
@@ -1313,7 +1339,7 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_42)
+		return grammar.tokenNode(KEY_43)
 		
 	def _sub_2(self):
 		
@@ -1321,7 +1347,7 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_2_1(self):
 		
-		return grammar.tokenNode(KEY_43)
+		return grammar.tokenNode(KEY_44)
 		
 	def _sub_3(self):
 		
@@ -1329,7 +1355,7 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_3_1(self):
 		
-		return grammar.tokenNode(KEY_44)
+		return grammar.tokenNode(KEY_45)
 		
 	def _sub_4(self):
 		
@@ -1337,7 +1363,7 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_4_1(self):
 		
-		return grammar.tokenNode(KEY_45)
+		return grammar.tokenNode(KEY_46)
 		
 class _InclpathRule(grammar.Rule):
 
@@ -1651,6 +1677,70 @@ class _GenumRule(grammar.Rule):
 	def _sub_1_6(self):
 		
 		return grammar.tokenNode(RBRACE)
+		
+class _ParamPropertiesRule(grammar.Rule):
+
+	def __init__(self, ident=''):
+	
+		grammar.Rule.__init__(self, 'param_properties', ident)
+		
+	def expand(self, start, end, context):
+		
+		start.connect(self._sub_1()).connect(end)
+		
+	def transform(self, astNode):
+		
+		
+		res = AstNode('properties')
+		
+		for prop in astNode.getChildrenById('prop'):
+			prop.setId('')
+			res.addChild(prop)
+		
+		return res
+		
+		
+	def _sub_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_1())
+		elements.append(self._sub_1_2())
+		elements.append(self._sub_1_3())
+		elements.append(self._sub_1_4())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_1(self):
+		
+		return grammar.tokenNode(LSBRACKET)
+		
+	def _sub_1_2(self):
+		
+		return _ParamPropertyRule('prop')
+		
+	def _sub_1_3(self):
+		
+		return grammar.zeroToMany(self._sub_1_3_1())
+		
+	def _sub_1_3_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_3_1_1())
+		elements.append(self._sub_1_3_1_2())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_3_1_1(self):
+		
+		return grammar.tokenNode(COMMA)
+		
+	def _sub_1_3_1_2(self):
+		
+		return _ParamPropertyRule('prop')
+		
+	def _sub_1_4(self):
+		
+		return grammar.tokenNode(RSBRACKET)
 		
 class _CodeValueRule(grammar.Rule):
 
@@ -2085,7 +2175,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_1_1(self):
 		
-		return grammar.tokenNode(KEY_46)
+		return grammar.tokenNode(KEY_47)
 		
 	def _sub_1_1_2(self):
 		
@@ -2093,7 +2183,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_2_1(self):
 		
-		return grammar.tokenNode(KEY_47)
+		return grammar.tokenNode(KEY_48)
 		
 	def _sub_1_2(self):
 		
@@ -2132,6 +2222,10 @@ class _InParamRule(grammar.Rule):
 		type_ = astNode['#type']
 		type_.setId('')
 		res.addChild(type_)
+		props = astNode['#props']
+		if props:
+			props.setId('')
+			res.addChild(props)
 		return res
 		
 	def _sub_1(self):
@@ -2141,6 +2235,7 @@ class _InParamRule(grammar.Rule):
 		elements.append(self._sub_1_2())
 		elements.append(self._sub_1_3())
 		elements.append(self._sub_1_4())
+		elements.append(self._sub_1_5())
 		
 		return grammar.Sequence(elements)
 		
@@ -2160,6 +2255,10 @@ class _InParamRule(grammar.Rule):
 		
 		return _ArgtypeRule('type')
 		
+	def _sub_1_5(self):
+		
+		return grammar.zeroToOne(_ParamPropertiesRule('props'))
+		
 class _InoutParamRule(grammar.Rule):
 
 	def __init__(self, ident=''):
@@ -2177,6 +2276,10 @@ class _InoutParamRule(grammar.Rule):
 		type_ = astNode['#type']
 		type_.setId('')
 		res.addChild(type_)
+		props = astNode['#props']
+		if props:
+			props.setId('')
+			res.addChild(props)
 		return res
 		
 	def _sub_1(self):
@@ -2186,6 +2289,7 @@ class _InoutParamRule(grammar.Rule):
 		elements.append(self._sub_1_2())
 		elements.append(self._sub_1_3())
 		elements.append(self._sub_1_4())
+		elements.append(self._sub_1_5())
 		
 		return grammar.Sequence(elements)
 		
@@ -2204,6 +2308,10 @@ class _InoutParamRule(grammar.Rule):
 	def _sub_1_4(self):
 		
 		return _ArgtypeRule('type')
+		
+	def _sub_1_5(self):
+		
+		return grammar.zeroToOne(_ParamPropertiesRule('props'))
 		
 class _PropContentRule(grammar.Rule):
 
@@ -2345,6 +2453,10 @@ class _OutParamRule(grammar.Rule):
 		type_ = astNode['#type']
 		type_.setId('')
 		res.addChild(type_)
+		props = astNode['#props']
+		if props:
+			props.setId('')
+			res.addChild(props)
 		return res
 		
 	def _sub_1(self):
@@ -2352,6 +2464,7 @@ class _OutParamRule(grammar.Rule):
 		elements = []
 		elements.append(self._sub_1_1())
 		elements.append(self._sub_1_2())
+		elements.append(self._sub_1_3())
 		
 		return grammar.Sequence(elements)
 		
@@ -2362,6 +2475,10 @@ class _OutParamRule(grammar.Rule):
 	def _sub_1_2(self):
 		
 		return _ArgtypeRule('type')
+		
+	def _sub_1_3(self):
+		
+		return grammar.zeroToOne(_ParamPropertiesRule('props'))
 		
 class _InterfaceMethodRule(grammar.Rule):
 
