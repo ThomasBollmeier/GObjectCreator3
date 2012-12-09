@@ -1,9 +1,8 @@
 from gobjcreator3.parameter import Parameter, BuiltIn, FullTypeName, ListOf, RefTo
-from gobjcreator3.misc import PropGTypeInfo
+from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
  
-
 class Interpreter(object):
     
     def __init__(self):
@@ -29,8 +28,7 @@ class Interpreter(object):
                           "private": Visibility.PRIVATE
                           }
         
-        self._prop_type_map = {
-                               "boolean": PropType.BOOLEAN,
+        self._prop_type_map = {"boolean": PropType.BOOLEAN,
                                "byte": PropType.BYTE,
                                "integer": PropType.INTEGER,
                                "float": PropType.FLOAT,
@@ -100,7 +98,12 @@ class Interpreter(object):
                 else:
                     interfaces.append(BuiltIn(intfNode.getText()))
         
-        visitor.enter_gobject(name, super_class, interfaces, self._cur_origin)
+        cfunc_prefix = ""
+        for prefix_node in ast.getChildrenByName("cfunc_prefix"):
+            cfunc_prefix = prefix_node.getText()
+            break
+        
+        visitor.enter_gobject(name, super_class, interfaces, cfunc_prefix, self._cur_origin)
 
         for child in ast.getChildren():
             try:
@@ -124,8 +127,13 @@ class Interpreter(object):
         name = ast["name"].getText()
         
         self._refresh_origin(ast)
+
+        cfunc_prefix = ""
+        for prefix_node in ast.getChildrenByName("cfunc_prefix"):
+            cfunc_prefix = prefix_node.getText()
+            break
                 
-        visitor.enter_ginterface(name, self._cur_origin)
+        visitor.enter_ginterface(name, cfunc_prefix, self._cur_origin)
         
         for method in ast.getChildrenByName("interface_method"):
             self._eval_interface_method(method, visitor)
@@ -276,6 +284,8 @@ class Interpreter(object):
                     attrs["description"] = child.getText()
                 elif cname == "gtype":
                     attrs["gtype"] = self._eval_prop_gtype(child)
+                elif cname in ["min", "max", "default"]:
+                    attrs[cname] = self._eval_prop_value(child)
                 elif cname == "auto-create":
                     attrs["auto-create"] = True
             visitor.visit_property(name, attrs)
@@ -295,6 +305,27 @@ class Interpreter(object):
             res.g_type_id = ast["id"].getText() 
         
         return res
+    
+    def _eval_prop_value(self, ast):
+        
+        value = PropValue()
+        
+        value_node = ast.getChildren()[0]
+        name = value_node.getName()
+        
+        if name == "literal":
+            value.literal = value_node.getText()
+        elif name == "number":
+            digits = value_node['digits'].getText()
+            decimals_node = value_node['decimals']
+            decimals = decimals_node and decimals_node.getText() or None
+            value.number_info = PropNumberInfo(digits, decimals)
+        elif name == "code_value":
+            enumeration_name = self._eval_full_type_name(value_node['full_type_name'])
+            code_name = value_node['code'].getText()
+            value.code_info = PropCodeInfo(enumeration_name, code_name)
+            
+        return value 
                             
     def _eval_signals(self, ast, visitor):
         

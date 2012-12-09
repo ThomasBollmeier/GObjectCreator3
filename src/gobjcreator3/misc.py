@@ -4,10 +4,25 @@ class PropGTypeInfo(object):
         
         self.gtype_id = ""
         self.full_type_name = None
+         
+class PropValue(object):
+    
+    def __init__(self):
         
-    def __str__(self):
+        self.literal = None
+        self.number_info = None
+        self.code_info = None
         
-        if self.gtype_id:
-            return self.gtype_id
-        else:
-            return "GType of %s" % self.full_type_name
+class PropNumberInfo(object):
+    
+    def __init__(self, digits, decimals):
+        
+        self.digits = digits
+        self.decimals = decimals
+        
+class PropCodeInfo(object):
+    
+    def __init__(self, enumeration_name, code_name):
+        
+        self.enumeration_name = enumeration_name
+        self.code_name = code_name

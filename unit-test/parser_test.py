@@ -60,6 +60,7 @@ class TestVisitor(AstVisitor):
                       name,
                       super_class,
                       interfaces,
+                      cfunc_prefix,
                       origin
                       ):
         
@@ -80,7 +81,7 @@ class TestVisitor(AstVisitor):
         
         self._dedent()
 
-    def enter_ginterface(self, name, origin):
+    def enter_ginterface(self, name, cfunc_prefix, origin):
         
         self._write("GInterface: %s [from %s]" % (self._absname(name), origin))
         self._indent()

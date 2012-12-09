@@ -58,7 +58,36 @@ class PropGTypeValue(object):
         
 class PropValue(object):
     
-    def __init__(self, name, is_codename):
+    def __init__(self):
         
-        self.name = name
-        self.is_codename = is_codename        
+        self.literal = None
+        self.number_info = None
+        self.code_info = None
+        
+    def __str__(self):
+        
+        if self.literal:
+            return self.literal
+        elif self.number_info:
+            if not self.number_info.decimals:
+                return self.number_info.digits
+            else:
+                return "%d.%d" % (self.number_info.digits, self.number_info.decimals)
+        elif self.code_info:
+            return "%s->%s" % (self.code_info.enumeration, self.code_info.code_name)
+        else:
+            return "<undefined property value>"
+        
+class PropNumberInfo(object):
+    
+    def __init__(self, digits, decimals):
+        
+        self.digits = digits
+        self.decimals = decimals
+        
+class PropCodeInfo(object):
+    
+    def __init__(self, enumeration, code_name):
+        
+        self.enumeration = enumeration
+        self.code_name = code_name        

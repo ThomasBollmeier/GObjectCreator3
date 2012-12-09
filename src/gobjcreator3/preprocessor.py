@@ -49,7 +49,10 @@ class PreProcessor(object):
             else:
                 filepath = ""
                 
-        if not filepath or filepath in self._expanded_asts:
+        if not filepath:
+            raise Exception("Include file '%s' cannot be found!" % filename)
+                
+        if filepath in self._expanded_asts:
             return []
         
         included_ast = self.get_expanded_ast(filepath)

@@ -6,6 +6,8 @@ class ClsIntf(Type):
         
         Type.__init__(self, name, category)
         
+        self.cfunc_prefix = ""
+        
         self._methods = []
         self._methods_d = {}
         

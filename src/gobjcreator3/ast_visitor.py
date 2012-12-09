@@ -22,6 +22,7 @@ class AstVisitor(object):
                       name,
                       super_class,
                       interfaces,
+                      cfunc_prefix,
                       origin
                       ):
         pass
@@ -29,7 +30,7 @@ class AstVisitor(object):
     def exit_gobject(self):
         pass
     
-    def enter_ginterface(self, name, origin):
+    def enter_ginterface(self, name, cfunc_prefix, origin):
         pass
     
     def exit_ginterface(self):

@@ -92,7 +92,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-file_path = FILE_NAME_PART? (DOT FILE_NAME_PART)*;
+file_path = ( PARENT_MODULE | DOT | SLASH | FILE_NAME_PART )*;
 
 % file_path {
 
@@ -181,6 +181,7 @@ gobject = 'gobject' name=ID LBRACE
 	(
 	inherits_stmt |
 	implements_stmt |
+	cfunc_prefix |
 	properties |
 	signals |
 	method_section |
@@ -204,16 +205,16 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-ginterface = 'ginterface' name=ID LBRACE interface_method* RBRACE;
+ginterface = 'ginterface' name=ID LBRACE elem=(cfunc_prefix | interface_method)* RBRACE;
 % ginterface {
 res = AstNode(self.getName())
 		
 name = AstNode('name', astNode['#name'].getText())
 res.addChild(name)
 		
-for intfmethod in astNode.getChildrenByName('interface_method'):
-	intfmethod.setId('')
-	res.addChild(intfmethod)
+for element in astNode.getChildrenById('elem'):
+	element.setId('')
+	res.addChild(element)
 				
 return res
 % }
@@ -310,6 +311,16 @@ for intf in astNode.getChildrenById('name'):
 	res.addChild(intf)
 
 return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+cfunc_prefix = 'cfunc' DASH 'prefix' value=ID SEMICOLON;
+
+% cfunc_prefix {
+
+return AstNode('cfunc_prefix', astNode['#value'].getText())
+
 % }
 
 <!----------------------------------------------------------------------------->

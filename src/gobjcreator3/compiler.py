@@ -11,6 +11,7 @@ from gobjcreator3.model.gerror import GError
 from gobjcreator3.model.genum import GEnum
 from gobjcreator3.model.gflags import GFlags
 from gobjcreator3.model.property import Property, PropAccess, PropGTypeValue
+from gobjcreator3.model.property import PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.signal import Signal
 from gobjcreator3.model.method import Method, Parameter
 from gobjcreator3.model.attribute import Attribute
@@ -53,8 +54,6 @@ class CompileStep0(AstVisitor):
     def enter_grammar(self):
         
         self._module_stack = [RootModule()]
-        self._gobject = None
-        self._ginterface = None
     
     def exit_grammar(self):
         
@@ -90,10 +89,12 @@ class CompileStep0(AstVisitor):
                       name,
                       super_class,
                       interfaces,
+                      cfunc_prefix,
                       origin
                       ):
         
         self._object = GObject(name)
+        self._object.cfunc_prefix = cfunc_prefix
         self._object.filepath_origin = origin 
     
     def exit_gobject(self):
@@ -101,9 +102,10 @@ class CompileStep0(AstVisitor):
         self._module_stack[-1].add_element(self._object)
         self._object = None
     
-    def enter_ginterface(self, name, origin):
+    def enter_ginterface(self, name, cfunc_prefix, origin):
         
         self._interface = GInterface(name)
+        self._interface.cfunc_prefix = cfunc_prefix
         self._interface.filepath_origin = origin
     
     def exit_ginterface(self):
@@ -200,6 +202,29 @@ class CompileStep1(AstVisitor):
                 
         return PropGTypeValue(gtype_id, type_)
     
+    def _get_prop_value(self, value_info):
+        
+        res = PropValue()
+        
+        if value_info.literal:
+            res.literal = value_info.literal
+        elif value_info.number_info:
+            digits = value_info.number_info.digits
+            decs = value_info.number_info.decimals
+            res.number_info = PropNumberInfo(digits, decs)
+        elif value_info.code_info:
+            enumeration = self._get_type(value_info.code_info.enumeration_name)
+            if not enumeration:
+                raise Exception("Enumeration '%s' is unknown!" % value_info.code_info.enumeration_name)
+            elif enumeration.category != Type.ENUMERATION:
+                raise Exception("Type '%s' is not an enumeration!" % value_info.code_info.enumeration_name)
+            code_name = value_info.code_info.code_name
+            if not enumeration.has_code(code_name):
+                raise Exception("Code '%s' is not defined in enumeration '%s'!" % (code_name, value_info.code_info.enumeration_name))
+            res.code_info = PropCodeInfo(enumeration, code_name)
+        
+        return res
+    
     def _get_parameters(self, method_name, parameters):
         
         res = []
@@ -253,6 +278,7 @@ class CompileStep1(AstVisitor):
                       name,
                       super_class,
                       interfaces,
+                      cfunc_prefix,
                       origin
                       ):
         
@@ -274,7 +300,7 @@ class CompileStep1(AstVisitor):
 
         self._gobject = None
     
-    def enter_ginterface(self, name, origin):
+    def enter_ginterface(self, name, cfunc_prefix, origin):
         
         self._ginterface = self._module_stack[-1].get_interface(name)
     
@@ -345,26 +371,35 @@ class CompileStep1(AstVisitor):
         pname = name
         try:
             ptype = attributes["type"]
-        except:
+        except KeyError:
             ptype = None
         try:
             access = attributes["access"]
-        except:
+        except KeyError:
             access = PropAccess.READ_ONLY
         try:
             description = attributes["description"]
-        except:
+        except KeyError:
             description = ""
         try:
             gtype = self._get_gtype(attributes["gtype"])
-        except:
+        except KeyError:
             gtype = None
-        min_ = None
-        max_ = None
-        default = None
+        try:
+            min_ = self._get_prop_value(attributes["min"])
+        except KeyError:
+            min_ = None
+        try:
+            max_ = self._get_prop_value(attributes["max"])
+        except KeyError:
+            max_ = None
+        try:
+            default = self._get_prop_value(attributes["default"])
+        except KeyError:
+            default = None
         try:
             auto_create = attributes["auto-create"]
-        except:
+        except KeyError:
             auto_create = False
         
         prop = Property(pname, 

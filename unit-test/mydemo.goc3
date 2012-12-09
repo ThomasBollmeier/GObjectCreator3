@@ -1,5 +1,5 @@
 include	"mytypes.goc3";
-include <glib.goc3>;
+include <./glib.goc3>;
 
 module gtk
 {
@@ -33,6 +33,8 @@ module company
 
 	ginterface Employee
 	{
+		cfunc-prefix empl;
+	
 		get_id 
 			-> integer;
 		get_salary
