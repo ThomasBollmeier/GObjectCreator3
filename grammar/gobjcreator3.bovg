@@ -177,7 +177,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 	
-gobject = 'gobject' name=ID LBRACE 
+gobject = 'gobject' name=ID gobject_props? LBRACE 
 	(
 	inherits_stmt |
 	implements_stmt |
@@ -193,7 +193,13 @@ res = AstNode(self.getName())
 
 res.addChild(AstNode('name', astNode['#name'].getText()))
 
-excluded_elements = ['token']
+props = astNode['properties']
+if props:	
+	for prop in props.getChildren():
+		if prop.getName() == 'abstract':
+			res.addChild(prop) 
+
+excluded_elements = ['token', 'properties']
 for child in astNode.getChildren():
 	if child.getName() in excluded_elements:
 		continue
@@ -286,6 +292,21 @@ for code in astNode.getChildrenById('code'):
 
 return res
 % }	
+
+<!----------------------------------------------------------------------------->
+
+gobject_props = LSBRACKET abstract='abstract' RSBRACKET;
+
+% gobject_props {
+
+res = AstNode('properties')
+
+if astNode['#abstract']:
+	res.addChild(AstNode('abstract'))
+
+return res
+
+% }
 
 <!----------------------------------------------------------------------------->
 

@@ -48,7 +48,7 @@ class AstVisitor(object):
     def visit_method(self, 
                      name, 
                      attributes,
-                     parameters 
+                     parameters,
                      ):
         pass
     

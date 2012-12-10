@@ -43,6 +43,8 @@ class Interpreter(object):
                                  "initial-write": PropAccess.INITIAL_WRITE,
                                  "read-write": PropAccess.READ_WRITE
                                  }
+        
+        self._cur_class_name = ""
     
     def eval_grammar(self, ast, visitor):
         
@@ -81,6 +83,8 @@ class Interpreter(object):
         
         name = ast["name"].getText()
         
+        self._cur_class_name = name
+        
         self._refresh_origin(ast)
 
         super_class_node = ast["super_class"]
@@ -112,6 +116,8 @@ class Interpreter(object):
                 pass
         
         visitor.exit_gobject()
+        
+        self._cur_class_name = ""
         
     def _eval_super_class(self, super_class_node):
         
@@ -204,6 +210,7 @@ class Interpreter(object):
         attributes["abstract"] = props and props["abstract"] and True or False
         attributes["overridden"] = props and props["overridden"] and True or False
         attributes["final"] = props and props["final"] and True or False
+        attributes["constructor"] = ( name == 'constructor' or name == self._cur_class_name ) 
         
         parameters = self._get_method_parameters(ast)
 

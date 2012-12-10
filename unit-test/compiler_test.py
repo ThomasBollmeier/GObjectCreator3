@@ -60,6 +60,10 @@ class CompilerTest(unittest.TestCase):
         employee = root.get_interface("company/Employee")
         print([m.name for m in employee.methods])
         
+        person = root.get_object("demo/Person")
+        print("Constructor of Person:")
+        for p in person.constructor.parameters:
+            print("%s: %s" % (p.name, p.type))
                                   
 if __name__ == "__main__":
     

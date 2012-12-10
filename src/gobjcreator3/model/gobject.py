@@ -9,6 +9,7 @@ class GObject(ClsIntf):
         ClsIntf.__init__(self, name, Type.OBJECT)
         
         self.super_class = None
+        self.constructor = None
         self.interfaces = []
         
         self.overridden = []
@@ -21,6 +22,10 @@ class GObject(ClsIntf):
         
         self._signals = []
         self._signals_d = {}
+        
+    def add_constructor(self, method):
+        
+        self.constructor = method
         
     def add_method(self, method):
         

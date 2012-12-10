@@ -252,6 +252,19 @@ class CompileStep1(AstVisitor):
             res.append(param_obj)
             
         return res
+    
+    def _get_constructor_parameters(self, cls, method_name, parameters):
+        
+        params = self._get_parameters(method_name, parameters)
+        
+        for param in params:
+            if param.direction == Parameter.OUT:
+                raise Exception("Constructor '%s' must not have a result parameter!" % method_name)
+            
+        # Add class type as (implicit) result:
+        params.append(Parameter("", cls, Parameter.OUT))
+        
+        return params
         
     # Visitor methods:
     
@@ -313,6 +326,18 @@ class CompileStep1(AstVisitor):
                      attributes,
                      parameters 
                      ):
+        
+        if attributes["constructor"]:
+            
+            constructor = Method("")
+            
+            constructor.set_static()
+            constructor.set_final()
+            constructor.parameters = self._get_constructor_parameters(self._gobject, name, parameters)
+                        
+            self._gobject.add_constructor(constructor)
+            
+            return
         
         if not attributes['overridden']:
 

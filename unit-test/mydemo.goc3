@@ -64,12 +64,15 @@ module demo
 	
 	gflags Mode { READ, WRITE, EXECUTE } 
 
-	gobject Person 
+	gobject Person [abstract]
 	{
 		implements /Human, ../bio/human/Human;
 		
 		public methods 
 		{
+			Person // <-- constructor
+				<- surname: string;
+		
 			do_something [abstract]
 				-> boolean;
 		}
@@ -132,12 +135,12 @@ module demo
 		
 		public methods 
 		{
-			create [static]
+			constructor
 				<- last_name: string [const]
 				<- first_name: string [const]
 				<- id: unsigned integer [const]
-				<-> error: ref(ref(../glib/GError))
-				-> Worker;
+				<-> error: ref(ref(../glib/GError));
+				
 			do_something [overridden];
 			do_something_else 
 				<- what: integer
