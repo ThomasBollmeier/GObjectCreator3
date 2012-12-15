@@ -1,5 +1,7 @@
 from gobjcreator3.codegen.code_generator import CodeGenerator
 from gobjcreator3.model.visibility import Visibility
+from gobjcreator3.model.type import Type, BuiltIn, Reference, List
+from gobjcreator3.model.method import Parameter
 import os
 import fabscript
 
@@ -79,10 +81,14 @@ class CCodeGenerator(CodeGenerator):
         
         self._template_processor = fabscript.API()
         self._template_processor.setEditableSectionStyle(self._template_processor.Language.C)
-
+        
+        self._template_processor["TRUE"] = True
+        self._template_processor["FALSE"] = False
         self._template_processor["PUBLIC"] = Visibility.PUBLIC
         self._template_processor["PROTECTED"] = Visibility.PROTECTED
         self._template_processor["PRIVATE"] = Visibility.PRIVATE
+        self._template_processor["type_name"] = self._name_creator.create_full_type_name
+        self._template_processor["is_empty"] = self._is_empty
         
     def _setup_module_symbols(self, module):
         
@@ -98,16 +104,95 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["module_prefix"] = prefix.lower()
         self._template_processor["MODULE_PREFIX"] = prefix.upper() 
         self._template_processor["ModulePrefix"] = camel_case_prefix
-        self._template_processor["has_module"] = bool(module.name)
-        
+                
     def _setup_gobject_symbols(self, obj):
         
         self._template_processor["class"] = obj
         self._template_processor["ClassName"] = obj.name
         self._template_processor["CLASS_NAME"] = self._name_creator.replace_camel_case(obj.name, "_").upper()
+        self._template_processor["FullClassName"] = self._template_processor.getSymbol("ModulePrefix") + obj.name
+        
         prefix = obj.cfunc_prefix or self._name_creator.replace_camel_case(obj.name, "_").lower()
+        module_prefix = self._template_processor.getSymbol("module_prefix")
+        if module_prefix:
+            prefix = module_prefix + "_" + prefix
         self._template_processor["class_prefix"] = prefix
         
+        self._template_processor["method_result"] = self._method_result
+        self._template_processor["method_signature"] = self._method_signature
+        
+    def _is_empty(self, data):
+        
+        return bool(data) == False
+    
+    def _method_result(self, method):
+        
+        result_type = "void"
+        
+        for p in method.parameters:
+            type_name = self._name_creator.create_full_type_name(p.type)
+            if isinstance(p.type, Type) and ( p.type.category == Type.OBJECT or p.type.category == Type.INTERFACE ):
+                type_name += "*"
+            if "const" in p.modifiers:
+                type_name = "const " + type_name
+            if p.direction == Parameter.OUT:
+                result_type = type_name
+                break
+            
+        return result_type
+            
+    def _method_signature(self, 
+                          cls,
+                          method,
+                          suppress_param_names=False,
+                          insert_line_breaks=True,
+                          indent_level=1
+                          ):
+        
+        res = ""
+        
+        params = []
+        for p in method.parameters:
+            type_name = self._name_creator.create_full_type_name(p.type)
+            if isinstance(p.type, Type) and ( p.type.category == Type.OBJECT or p.type.category == Type.INTERFACE ):
+                type_name += "*"
+            if "const" in p.modifiers:
+                type_name = "const " + type_name
+            if p.direction != Parameter.OUT:
+                params.append((type_name, p.name))
+                
+        if not method.is_static:
+            cls_type = self._name_creator.create_full_type_name(cls) 
+            params.insert(0, (cls_type + "*", "self"))
+            
+        if len(params) == 0:
+            
+            res = "void"
+                        
+        elif len(params) == 1:
+            
+            res = params[0][0]
+            if not suppress_param_names:
+                res += " " + params[0][1]
+        
+        else:    
+            
+            for param in params:
+                if res:
+                    res += ", " 
+                if insert_line_breaks:
+                    res += "\n"
+                    res += indent_level * "\t"
+                res += param[0]
+                if not suppress_param_names:
+                    res += " " + param[1] 
+
+            if insert_line_breaks:
+                res += "\n"
+                res += indent_level * "\t"
+                
+        return res
+                
 class NameCreator(object):
     
     def __init__(self):
@@ -134,6 +219,31 @@ class NameCreator(object):
     def create_obj_source_name(self, obj):
         
         return self._create_elem_base_name(obj) + ".c"
+
+    def create_full_type_name(self, type_):
+        
+        if isinstance(type_, Reference):
+            res = self.create_full_type_name(type_.target_type) + "*"
+        elif isinstance(type_, List):
+            res = self.create_full_type_name(type_.line_type) + "*"
+        elif isinstance(type_, BuiltIn):
+            res = {"string" : "gchar*",
+                   "boolean": "gboolean",
+                   "integer": "gint",
+                   "unsigned integer": "guint",
+                   "float": "gfloat",
+                   "double": "gdouble",
+                   "any": "gpointer"
+                   }[type_.name]
+        else:
+            res = type_.name
+                        
+            module = type_.module
+            while module and module.name:
+                res = module.name.capitalize() + res
+                module = module.module
+        
+        return res
         
     def _create_elem_base_name(self, module_elem):
         

@@ -1,8 +1,8 @@
 /*
  * ...Copyright/Licensing information...
  */
-
-:> if [ has_module ] then begin
+ 
+:> if [ not is_empty(class.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${CLASS_NAME}_H__
 #define __${MODULE_PREFIX}_${CLASS_NAME}_H__
 :> else
@@ -12,17 +12,13 @@
 
 #include <glib-object.h>
 
-:> if [ has_module ] then begin
-#define ${MODULE_PREFIX}_TYPE_${CLASS_NAME}            (${module_prefix}_${class_prefix}_get_type ())
-#define ${MODULE_PREFIX}_${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${ModulePrefix}${ClassName}))
+:> if [ not is_empty(class.module) ] then begin
+#define ${MODULE_PREFIX}_TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
+#define ${MODULE_PREFIX}_${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}))
 #define ${MODULE_PREFIX}_IS_${CLASS_NAME}(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
-#define ${MODULE_PREFIX}_${CLASS_NAME}_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${ModulePrefix}${ClassName}Class))
+#define ${MODULE_PREFIX}_${CLASS_NAME}_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
 #define ${MODULE_PREFIX}_IS_${CLASS_NAME}_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
-#define ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${ModulePrefix}${ClassName}Class))
-
-typedef struct _${ModulePrefix}${ClassName}      ${ModulePrefix}${ClassName};
-typedef struct _${ModulePrefix}${ClassName}Class ${ModulePrefix}${ClassName}Class;
-
+#define ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
 :> else
 #define TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
 #define ${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_${CLASS_NAME}, ${ClassName}))
@@ -30,57 +26,56 @@ typedef struct _${ModulePrefix}${ClassName}Class ${ModulePrefix}${ClassName}Clas
 #define ${CLASS_NAME}_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_${CLASS_NAME}, ${ClassName}Class))
 #define IS_${CLASS_NAME}_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TYPE_${CLASS_NAME}))
 #define ${CLASS_NAME}_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_${CLASS_NAME}, ${ClassName}Class))
-
-typedef struct _${ClassName}      ${ClassName};
-typedef struct _${ClassName}Class ${ClassName}Class;
 :> endif
 
-:> if [ has_module ] then begin
-struct _${ModulePrefix}${ClassName}
-:> else
-struct _${ClassName}
-:> endif
+typedef struct _${FullClassName}      ${FullClassName};
+typedef struct _${FullClassName}Class ${FullClassName}Class;
+
+struct _${FullClassName}
 {
 
+	:> if [ is_empty(class.super_class) ] then begin
 	GObject super;
+	:> else
+	${type_name(class.super_class)} super;
+	:> endif
 
   	/* instance members */
 
 };
 
-:> if [ has_module ] then begin
-struct _${ModulePrefix}${ClassName}Class
-:> else
-struct _${ClassName}Class
-:> endif
+struct _${FullClassName}Class
 {
 
+	:> if [ is_empty(class.super_class) ] then begin
   	GObjectClass super_class;
+  	:> else
+  	${type_name(class.super_class)}Class super;
+  	:> endif
 
   	/* class members */
   	
 };
 
-:> if [ has_module ] then begin
-GType ${module_prefix}_${class_prefix}_get_type (void);
-:> else
-GType ${class_prefix}_get_type (void);
-:> endif
-
-/*
- * Method definitions.
- */
+GType 
+${class_prefix}_get_type (void);
  
+ :> define suppress_param_names = FALSE
+ :> define insert_line_breaks = TRUE
+ :> define indent_level = 1
  :> for each method in class.methods where method.visibility == PUBLIC do
- 	:> if [ has_module ] then begin
-${module_prefix}_${class_prefix}_${method.name}(); 	
- 	:> else
-${class_prefix}_${method.name}(); 	
- 	:> endif 
+ 	:> if [ isFirst ] then begin
+/*
+ * Public methods
+ */
  	
+ 	:> endif	
+${method_result(method)}
+${class_prefix}_${method.name} (${method_signature(class, method, suppress_param_names, insert_line_breaks, indent_level)});   	
+
   :> done
 
-:> if [ has_module ] then begin
+:> if [ not is_empty(class.module) ] then begin
 #endif /* __${MODULE_PREFIX}_${CLASS_NAME}_H__ */
 :> else
 #endif /* __${CLASS_NAME}_H__ */
