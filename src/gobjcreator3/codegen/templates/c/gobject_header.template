@@ -12,6 +12,17 @@
 
 #include <glib-object.h>
 
+:> if [ not is_empty(class.super_class) ] then begin
+#include "${filename_wo_suffix(class.super_class)}.h"
+:> endif
+:> for each intf in class.interfaces do
+#include "${filename_wo_suffix(intf)}.h"
+:> done
+
+:> edit-section 'top' begin
+/* insert further includes here... */
+:> endedit
+
 :> if [ not is_empty(class.module) ] then begin
 #define ${MODULE_PREFIX}_TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
 #define ${MODULE_PREFIX}_${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}))
@@ -31,6 +42,39 @@
 typedef struct _${FullClassName}      ${FullClassName};
 typedef struct _${FullClassName}Class ${FullClassName}Class;
 
+:> define hasPrivAttrs = FALSE
+:> define hasProtAttrs = FALSE
+:> define hasPrivClassAttrs = FALSE
+:> define hasProtClassAttrs = FALSE
+:> for each a in class.get_attributes() do
+	:> case a.visibility in
+	:> PRIVATE)
+		:> if [ not a.is_static ] then begin
+			:> hasPrivAttrs = TRUE
+		:> else
+			:> hasPrivClassAttrs = TRUE
+		:> endif
+	:> PROTECTED)
+		:> if [ not a.is_static ] then begin
+			:> hasProtAttrs = TRUE
+		:> else
+			:> hasProtClassAttrs = TRUE
+		:> endif
+	:> endcase
+:> done
+:> if [ hasProtAttrs ] then begin
+typedef struct _${FullClassName}Protected ${FullClassName}Protected;
+:> endif
+:> if [ hasPrivAttrs ] then begin
+typedef struct _${FullClassName}Private ${FullClassName}Private;
+:> endif
+:> if [ hasProtClassAttrs ] then begin
+typedef struct _${FullClassName}ClsProtected ${FullClassName}ClsProtected;
+:> endif
+:> if [ hasPrivClassAttrs ] then begin
+typedef struct _${FullClassName}ClsPrivate ${FullClassName}ClsPrivate;
+:> endif
+
 struct _${FullClassName}
 {
 
@@ -40,7 +84,12 @@ struct _${FullClassName}
 	${type_name(class.super_class)} super;
 	:> endif
 
-  	/* instance members */
+	:> if [ hasProtAttrs ] then begin
+	${FullClassName}Protected *prot; /* protected attributes */
+	:> endif	
+	:> if [ hasPrivAttrs ] then begin
+	${FullClassName}Private *priv; /* private attributes */
+	:> endif	
 
 };
 
@@ -54,6 +103,13 @@ struct _${FullClassName}Class
   	:> endif
 
   	/* class members */
+
+	:> if [ hasProtClassAttrs ] then begin
+	${FullClassName}ClsProtected *prot; /* protected attributes */
+	:> endif	
+	:> if [ hasPrivClassAttrs ] then begin
+	${FullClassName}ClsPrivate *priv; /* private attributes */
+	:> endif	
   	
 };
 
@@ -66,7 +122,7 @@ ${class_prefix}_get_type (void);
  :> for each method in class.methods where method.visibility == PUBLIC do
  	:> if [ isFirst ] then begin
 /*
- * Public methods
+ * public methods:
  */
  	
  	:> endif	

@@ -118,6 +118,8 @@ class CCodeGenerator(CodeGenerator):
             prefix = module_prefix + "_" + prefix
         self._template_processor["class_prefix"] = prefix
         
+        self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix
+        
         self._template_processor["method_result"] = self._method_result
         self._template_processor["method_signature"] = self._method_signature
         
@@ -211,6 +213,10 @@ class NameCreator(object):
             prev = ch
             
         return res
+    
+    def create_filename_wo_suffix(self, elem):
+        
+        return self._create_elem_base_name(elem)
     
     def create_obj_header_name(self, obj):
         

@@ -81,6 +81,11 @@ module demo
 		{
 			surname: string;
 		}
+		
+		protected attributes 
+		{
+			year_of_birth: integer;
+		}
 	}
 	
 	genum WorkerStatus { FREE, BUSY, OUT_OF_OFFICE }
