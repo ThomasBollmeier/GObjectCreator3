@@ -17,7 +17,7 @@ class CodeGeneratorTest(unittest.TestCase):
         
     def testCCodeGeneration(self):
         
-        origin = _CURDIR + os.sep + "mydemo.goc3"
+        origin = _CURDIR + os.sep + "test.goc3"
         
         root = Compiler().compile(origin)
         

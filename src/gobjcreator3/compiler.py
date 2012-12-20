@@ -87,13 +87,20 @@ class CompileStep0(AstVisitor):
         
     def enter_gobject(self, 
                       name,
+                      is_abstract,
+                      is_final,
                       super_class,
                       interfaces,
                       cfunc_prefix,
                       origin
                       ):
+
+        if is_abstract and is_final:
+            raise Exception("Abstract class '%s' must not be final!" % name)
         
         self._object = GObject(name)
+        self._object.is_abstract = is_abstract
+        self._object.is_final = is_final
         self._object.cfunc_prefix = cfunc_prefix
         self._object.filepath_origin = origin 
     
@@ -289,6 +296,8 @@ class CompileStep1(AstVisitor):
     
     def enter_gobject(self, 
                       name,
+                      is_abstract,
+                      is_final,
                       super_class,
                       interfaces,
                       cfunc_prefix,

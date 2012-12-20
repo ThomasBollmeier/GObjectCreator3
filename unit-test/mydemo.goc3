@@ -82,6 +82,14 @@ module demo
 			surname: string;
 		}
 		
+		protected methods
+		{
+			set_date
+				<- year: integer
+				<- month: integer
+				<- day: integer;
+		}
+		
 		protected attributes 
 		{
 			year_of_birth: integer;
@@ -144,16 +152,22 @@ module demo
 				<- last_name: string [const]
 				<- first_name: string [const]
 				<- id: unsigned integer [const]
-				<-> error: ref(ref(../glib/GError));
+				<-> error: ref(ref(GError));
 				
 			do_something [overridden];
 			do_something_else 
 				<- what: integer
+				<-> error: ref(ref(GError))
 				-> boolean;
 			get_team_members [static]
 				-> list(company/Employee);
 		} 
 		
+		protected attributes 
+		{
+			boss: company/Employee;
+		}
+				
 		private methods
 		{
 			do_something_secret;

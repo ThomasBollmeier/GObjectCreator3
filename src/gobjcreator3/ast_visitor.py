@@ -20,6 +20,8 @@ class AstVisitor(object):
 
     def enter_gobject(self, 
                       name,
+                      is_abstract,
+                      is_final,
                       super_class,
                       interfaces,
                       cfunc_prefix,

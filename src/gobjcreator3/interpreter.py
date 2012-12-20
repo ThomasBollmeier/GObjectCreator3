@@ -107,7 +107,17 @@ class Interpreter(object):
             cfunc_prefix = prefix_node.getText()
             break
         
-        visitor.enter_gobject(name, super_class, interfaces, cfunc_prefix, self._cur_origin)
+        is_abstract = bool(ast["abstract"])
+        is_final = bool(ast["final"])
+        
+        visitor.enter_gobject(name,
+                              is_abstract,
+                              is_final, 
+                              super_class, 
+                              interfaces, 
+                              cfunc_prefix, 
+                              self._cur_origin
+                              )
 
         for child in ast.getChildren():
             try:

@@ -17,19 +17,14 @@ class ParserTest(unittest.TestCase):
         
         self._preprocessor = None
         
-    def testMyDemo(self):
+    def testParsing(self):
         
-        try:
+        ast = self._preprocessor.get_expanded_ast(_CURDIR + os.sep + "test.goc3")
+        self.assertIsNotNone(ast)
+        print(ast.toXml())
             
-            ast = self._preprocessor.get_expanded_ast(_CURDIR + os.sep + "mydemo.goc3")
-            self.assertIsNotNone(ast)
-            print(ast.toXml())
-            
-            interpreter = Interpreter()
-            interpreter.eval_grammar(ast, TestVisitor())
-                        
-        except Exception as error:
-            self.fail("ParseError: %s" % error)
+        interpreter = Interpreter()
+        interpreter.eval_grammar(ast, TestVisitor())
             
 class TestVisitor(AstVisitor):
     
@@ -58,6 +53,8 @@ class TestVisitor(AstVisitor):
                 
     def enter_gobject(self, 
                       name,
+                      is_abstract,
+                      is_final,
                       super_class,
                       interfaces,
                       cfunc_prefix,

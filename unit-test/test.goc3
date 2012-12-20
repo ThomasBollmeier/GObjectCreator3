@@ -1,0 +1,31 @@
+module core {
+
+	gobject Human [abstract] {
+	
+	}
+	
+	gobject Person [final] {
+	
+		inherits from Human;
+		
+		properties {
+		
+			full-name {
+				description = "Person's full name",
+				type = string,
+				access = read-only
+			}
+			 
+		}
+		
+		public methods {
+		
+			Person 
+				<- first_name: string [const]
+				<- last_name: string [const];
+				
+		}
+		
+	}
+
+}

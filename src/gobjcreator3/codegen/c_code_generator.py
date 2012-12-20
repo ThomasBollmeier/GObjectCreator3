@@ -3,6 +3,7 @@ from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.type import Type, BuiltIn, Reference, List
 from gobjcreator3.model.method import Parameter
 import os
+import re
 import fabscript
 
 class CCodeGenerator(CodeGenerator):
@@ -16,6 +17,8 @@ class CCodeGenerator(CodeGenerator):
         
         self._name_creator = NameCreator()
         self._refresh_template_processor()
+        
+        self._regex_type_w_ptrs = re.compile(r"(\w+)(\s*)(\*+)") 
                 
     def generate(self):
         
@@ -42,6 +45,7 @@ class CCodeGenerator(CodeGenerator):
         for obj in objs:
             self._setup_gobject_symbols(obj)
             self._gen_object_header(obj)
+            self._gen_object_prot_header(obj)
             self._gen_object_source(obj)
                     
         self._out.exit_dir(self._cur_dir)
@@ -57,6 +61,16 @@ class CCodeGenerator(CodeGenerator):
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(obj)
         lines = self._get_lines_from_template("gobject_header.template")
                 
+        self._out.visit_text_file(file_path, lines)
+        
+    def _gen_object_prot_header(self, obj):
+        
+        if not obj.has_protected_members() and not obj.is_abstract:
+            return
+            
+        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_prot_header_name(obj)
+        lines = self._get_lines_from_template("gobject_header_prot.template")
+        
         self._out.visit_text_file(file_path, lines)
             
     def _gen_object_source(self, obj):
@@ -89,6 +103,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["PRIVATE"] = Visibility.PRIVATE
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
         self._template_processor["is_empty"] = self._is_empty
+        self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
         
     def _setup_module_symbols(self, module):
         
@@ -118,10 +133,13 @@ class CCodeGenerator(CodeGenerator):
             prefix = module_prefix + "_" + prefix
         self._template_processor["class_prefix"] = prefix
         
+        self._template_processor["protected_header"] = self._name_creator.create_obj_prot_header_name
         self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix
         
         self._template_processor["method_result"] = self._method_result
         self._template_processor["method_signature"] = self._method_signature
+        
+        self._template_processor["hasProtectedMembers"] = obj.has_protected_members()
         
     def _is_empty(self, data):
         
@@ -141,7 +159,7 @@ class CCodeGenerator(CodeGenerator):
                 result_type = type_name
                 break
             
-        return result_type
+        return self._rearrange_asterisk(result_type)
             
     def _method_signature(self, 
                           cls,
@@ -175,7 +193,7 @@ class CCodeGenerator(CodeGenerator):
             
             res = params[0][0]
             if not suppress_param_names:
-                res += " " + params[0][1]
+                res = self._rearrange_asterisk(res, params[0][1])
         
         else:    
             
@@ -185,15 +203,32 @@ class CCodeGenerator(CodeGenerator):
                 if insert_line_breaks:
                     res += "\n"
                     res += indent_level * "\t"
-                res += param[0]
+                typename = param[0]
                 if not suppress_param_names:
-                    res += " " + param[1] 
+                    res += self._rearrange_asterisk(typename, param[1])
+                else:
+                    res += typename 
 
             if insert_line_breaks:
                 res += "\n"
                 res += indent_level * "\t"
                 
         return res
+    
+    def _rearrange_asterisk(self, typename, parname=None):
+        
+        match = self._regex_type_w_ptrs.match(typename)
+        if match:
+            if parname:
+                typename = match.group(1)
+                parname = match.group(3) + parname
+            else:
+                typename = match.group(1) + " " + match.group(3)
+
+        if parname:            
+            return typename + " " + parname
+        else:
+            return typename
                 
 class NameCreator(object):
     
@@ -222,11 +257,15 @@ class NameCreator(object):
         
         return self._create_elem_base_name(obj) + ".h"
 
+    def create_obj_prot_header_name(self, obj):
+        
+        return self._create_elem_base_name(obj) + self._file_name_sep + "protected.h"
+
     def create_obj_source_name(self, obj):
         
         return self._create_elem_base_name(obj) + ".c"
 
-    def create_full_type_name(self, type_):
+    def create_full_type_name(self, type_, with_asterisk=False):
         
         if isinstance(type_, Reference):
             res = self.create_full_type_name(type_.target_type) + "*"
@@ -248,6 +287,10 @@ class NameCreator(object):
             while module and module.name:
                 res = module.name.capitalize() + res
                 module = module.module
+                
+            if with_asterisk:
+                if type_.category in [Type.OBJECT, Type.INTERFACE]:
+                    res += "*"
         
         return res
         

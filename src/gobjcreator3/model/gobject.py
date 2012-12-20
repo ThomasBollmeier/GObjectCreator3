@@ -8,6 +8,8 @@ class GObject(ClsIntf):
         
         ClsIntf.__init__(self, name, Type.OBJECT)
         
+        self.is_abstract = False
+        self.is_final = False
         self.super_class = None
         self.constructor = None
         self.interfaces = []
@@ -154,6 +156,14 @@ class GObject(ClsIntf):
             cls = cls.super_class
             
         return res
+    
+    def has_protected_members(self):
+        
+        has_prot_attrs = bool([attr for attr in self._attributes if attr.visibility == Visibility.PROTECTED])
+        if has_prot_attrs:
+            return True
+        else:
+            return bool([meth for meth in self.methods if meth.visibility == Visibility.PROTECTED])
             
 class MethodInfo(object):
     

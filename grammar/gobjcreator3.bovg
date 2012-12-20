@@ -177,8 +177,8 @@ return res
 
 <!----------------------------------------------------------------------------->
 	
-gobject = 'gobject' name=ID gobject_props? LBRACE 
-	(
+gobject = 'gobject' name=ID props=gobject_props? LBRACE 
+	element=(
 	inherits_stmt |
 	implements_stmt |
 	cfunc_prefix |
@@ -193,16 +193,12 @@ res = AstNode(self.getName())
 
 res.addChild(AstNode('name', astNode['#name'].getText()))
 
-props = astNode['properties']
+props = astNode['#props']
 if props:	
 	for prop in props.getChildren():
-		if prop.getName() == 'abstract':
-			res.addChild(prop) 
+		res.addChild(prop) 
 
-excluded_elements = ['token', 'properties']
-for child in astNode.getChildren():
-	if child.getName() in excluded_elements:
-		continue
+for child in astNode.getChildrenById('element'):
 	child.setId('')
 	res.addChild(child)
 
@@ -295,19 +291,29 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-gobject_props = LSBRACKET abstract='abstract' RSBRACKET;
+gobject_props = LSBRACKET prop=gobject_prop (COMMA prop=gobject_prop)* RSBRACKET;
 
 % gobject_props {
 
-res = AstNode('properties')
+res = AstNode(self.getName())
 
-if astNode['#abstract']:
-	res.addChild(AstNode('abstract'))
+for child in astNode.getChildrenById('prop'):
+	child.setId('')
+	res.addChild(child)
 
 return res
 
 % }
 
+<!----------------------------------------------------------------------------->
+
+gobject_prop = 'abstract' | 'final';
+
+% gobject_prop {
+
+return AstNode(astNode.getChildren()[0].getText())
+
+% }
 <!----------------------------------------------------------------------------->
 
 inherits_stmt = 'inherits' 'from' super_name=type_name SEMICOLON;
