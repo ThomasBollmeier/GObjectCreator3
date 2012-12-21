@@ -65,7 +65,7 @@ class CCodeGenerator(CodeGenerator):
         
     def _gen_object_prot_header(self, obj):
         
-        if not obj.has_protected_members() and not obj.is_abstract:
+        if not obj.has_protected_members() and obj.is_final:
             return
             
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_prot_header_name(obj)
@@ -76,7 +76,7 @@ class CCodeGenerator(CodeGenerator):
     def _gen_object_source(self, obj):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(obj)
-        lines = []
+        lines = self._get_lines_from_template("gobject_source.template")
         
         self._out.visit_text_file(file_path, lines)
         
@@ -89,7 +89,20 @@ class CCodeGenerator(CodeGenerator):
         out_buffer = self._template_processor.createStringOut()
         self._template_processor.createCode(template_path, out_buffer)
         
-        return out_buffer.content.split(os.linesep)
+        lines = out_buffer.content.split(os.linesep)
+        # Remove adjacent empty lines:
+        res = []
+        prev = None
+        for line in lines:
+            line = line.rstrip()
+            if line:
+                res.append(line)
+            else:
+                if prev is None or prev:
+                    res.append(line)
+            prev = line
+        
+        return res
         
     def _refresh_template_processor(self):
         
@@ -102,6 +115,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["PROTECTED"] = Visibility.PROTECTED
         self._template_processor["PRIVATE"] = Visibility.PRIVATE
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
+        self._template_processor["TYPE_MACRO"] = self._name_creator.create_type_macro
         self._template_processor["is_empty"] = self._is_empty
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
         
@@ -293,6 +307,24 @@ class NameCreator(object):
                     res += "*"
         
         return res
+    
+    def create_type_macro(self, type_):
+        
+        basename = self.replace_camel_case(type_.name, "_").upper()
+
+        module_prefix = ""
+        module = type_.module
+        while module and module.name:
+            if module_prefix:
+                module_prefix = module.name.capitalize() + "_" + module_prefix
+            else:
+                module_prefix = module.name.capitalize()
+            module = module.module
+        
+        if module_prefix:
+            return module_prefix + "_TYPE_" + basename
+        else:
+            return "TYPE_" + basename 
         
     def _create_elem_base_name(self, module_elem):
         

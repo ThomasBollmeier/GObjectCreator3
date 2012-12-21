@@ -10,10 +10,12 @@
 #define __${CLASS_NAME}_H__
 :> endif
 
+G_BEGIN_DECLS
+
 #include <glib-object.h>
 
 :> if [ not is_empty(class.super_class) ] then begin
-#include "${protected_header(class.super_class)}"
+#include "${filename_wo_suffix(class.super_class)}.h"
 :> endif
 :> for each intf in class.interfaces do
 #include "${filename_wo_suffix(intf)}.h"
@@ -23,7 +25,7 @@
 /* insert further includes here... */
 :> endedit
 
-:> if [ not is_empty(class.module) ] then begin
+:> if [ not is_empty(MODULE_PREFIX) ] then begin
 #define ${MODULE_PREFIX}_TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
 #define ${MODULE_PREFIX}_${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}))
 #define ${MODULE_PREFIX}_IS_${CLASS_NAME}(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
@@ -116,21 +118,22 @@ struct _${FullClassName}Class
 GType 
 ${class_prefix}_get_type (void);
 
+:> define suppress_param_names = FALSE
+:> define insert_line_breaks = TRUE
+:> define indent_level = 1
+
 :> if [ not class.is_abstract ] then begin
 /* 
  * constructor: 
  */
 ${FullClassName} *
 	:> if [ not is_empty(class.constructor) ] then begin
-${class_prefix}_new (...);
+${class_prefix}_new (${method_signature(class, class.constructor, suppress_param_names, insert_line_breaks, indent_level)});
 	:> else
 ${class_prefix}_new (void);
 	:> endif
 :> endif
  
-:> define suppress_param_names = FALSE
-:> define insert_line_breaks = TRUE
-:> define indent_level = 1
 :> for each method in class.methods where method.visibility == PUBLIC do
 	:> if [ isFirst ] then begin
 /*
@@ -143,7 +146,9 @@ ${class_prefix}_${method.name} (${method_signature(class, method, suppress_param
 
 :> done
 
-:> if [ not is_empty(class.module) ] then begin
+G_END_DECLS
+
+:> if [ not is_empty(MODULE_PREFIX) ] then begin
 #endif /* __${MODULE_PREFIX}_${CLASS_NAME}_H__ */
 :> else
 #endif /* __${CLASS_NAME}_H__ */

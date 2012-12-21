@@ -10,7 +10,12 @@
 #define __${CLASS_NAME}_PROT_H__
 :> endif
 
+G_BEGIN_DECLS
+
 #include "${filename_wo_suffix(class)}.h"
+:> if [ not is_empty(class.super_class) ] then begin
+#include "${protected_header(class.super_class)}"
+:> endif
 
 :> edit-section 'top' begin
 /* insert further includes here... */
@@ -56,6 +61,7 @@ struct _${FullClassName}ClsProtected
 :> define suppress_param_names = FALSE
 :> define insert_line_breaks = TRUE
 :> define indent_level = 1
+ 
 :> for each method in class.methods where method.visibility == PROTECTED do
 	:> if [ isFirst ] then begin
 /*
@@ -67,6 +73,8 @@ ${method_result(method)}
 ${class_prefix}_${method.name} (${method_signature(class, method, suppress_param_names, insert_line_breaks, indent_level)});   	
 
 :> done
+
+G_END_DECLS
 
 :> if [ not is_empty(class.module) ] then begin
 #endif /* __${MODULE_PREFIX}_${CLASS_NAME}_PROT_H__ */

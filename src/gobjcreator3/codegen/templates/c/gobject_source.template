@@ -1,0 +1,50 @@
+#include "${filename_wo_suffix(class)}.h"
+
+:> edit-section 'source-top' begin
+/* ... */
+:> endedit
+
+static void                
+${class_prefix}_class_init (
+	gpointer klass,
+	gpointer class_data
+	)
+{
+
+:> edit-section 'class-init' begin
+/* Add custom class initialization code ... */
+:> endedit
+
+}
+
+GType 
+${class_prefix}_get_type (void) 
+{
+	static GType type = 0;
+	
+	if (type == 0) 
+	{
+		const GTypeInfo type_info = {
+	   		sizeof (${FullClassName}Class),
+	   		NULL,           /* base_init */
+	   		NULL,           /* base_finalize */
+	   		(GClassInitFunc) ${class_prefix}_class_init,
+	   		NULL,           /* class_finalize */
+	   		NULL,           /* class_data */
+	   		sizeof (${FullClassName}),
+	   		0,              /* n_preallocs */
+	   		(GInstanceInitFunc) NULL /* instance_init */
+	   		};
+    		
+		:> if [ is_empty(class.super_class) ] then begin    		
+    	type = g_type_register_static (G_TYPE_OBJECT,
+    	:> else
+    	type = g_type_register_static (${TYPE_MACRO(class.super_class)},
+    	:> endif
+    		"${FullClassName}", 
+    		&type_info, 
+    		0);	
+	}
+
+	return type;
+}

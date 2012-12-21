@@ -1,31 +1,40 @@
-module core {
-
-	gobject Human [abstract] {
+gobject Animal [abstract] {
 	
+}
+	
+gobject Dog {
+
+	inherits from Animal;
+	
+	public methods {
+	
+		Dog
+			<- name: string [const];
+		
 	}
 	
-	gobject Person [final] {
+}
 	
-		inherits from Human;
+gobject Human [final] {
+	
+	inherits from Animal;
 		
-		properties {
+	properties {
 		
-			full-name {
-				description = "Person's full name",
-				type = string,
-				access = read-only
-			}
+		full-name {
+			description = "full name",
+			type = string,
+			access = read-only
+		}
 			 
-		}
-		
-		public methods {
-		
-			Person 
-				<- first_name: string [const]
-				<- last_name: string [const];
-				
-		}
-		
 	}
-
+		
+	public methods {
+		
+		Human 
+			<- first_name: string [const]
+			<- last_name: string [const];
+				
+	}
+		
 }
