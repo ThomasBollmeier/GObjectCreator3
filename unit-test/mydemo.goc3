@@ -110,26 +110,26 @@ module demo
 		
 			last-name
 			{
-				access = initial-write
+				access = init-only & write
 			}
 			
 			full-name 
 			{
-				access = read-only,
+				access = read,
 				description = 'worker\'s name',
 				auto-create
 			}
 			
 			team 
 			{
-				access = read-only,
+				access = read,
 				type = object,
 				gtype = gtypeof(company/Team)
 			}
 			
 			status 
 			{
-				access = read-only,
+				access = read,
 				type = enumeration,
 				gtype = gtypeof(WorkerStatus),
 				default = WorkerStatus.FREE,

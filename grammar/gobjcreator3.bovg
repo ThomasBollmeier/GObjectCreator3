@@ -1,6 +1,6 @@
 <!-- Grammar of GObjectCreator3 -->
 
-<!-- enable full-backtracking; -->
+enable full-backtracking;
 
 line-comment-style '//';
 block-comment-style '/*' '*/';
@@ -33,6 +33,7 @@ separator LPAR '(';
 separator RPAR ')';
 separator LABRACKET '<'; <!-- left angle bracket -->
 separator RABRACKET '>';
+separator AMPERSAND '&';
 
 <!----------------------------------------------------------------------------->
 
@@ -443,13 +444,35 @@ return AstNode('type', astNode['#value'].getText())
 
 <!----------------------------------------------------------------------------->
 
-prop_access = 'access' ASSIGN value=( 'read' DASH 'only' | 'read' DASH 'write' | 'initial' DASH 'write' );
+prop_access = 'access' ASSIGN modes=prop_access_modes;
 % prop_access {
+res = AstNode('access')
+for child in astNode['#modes'].getChildren():
+	res.addChild(child)
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_access_modes = mode=prop_access_mode (AMPERSAND mode=prop_access_mode)*;
+
+% prop_access_modes {
+res = AstNode('modes')
+for child in astNode.getChildrenById('mode'):
+	child.setId('')
+	res.addChild(child)
+return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+prop_access_mode = ( 'read' | 'write' | 'init' (DASH 'only')?);
+
+% prop_access_mode {
 text = ""
-for child in astNode.getChildrenById('value'):
+for child in astNode.getChildren():
 	text += child.getText()
-	
-return AstNode('access', text)
+return AstNode(text)
 % }
 
 <!----------------------------------------------------------------------------->
@@ -641,7 +664,7 @@ return AstNode(self.getName(), astNode.getChildren()[0].getText())
 
 <!----------------------------------------------------------------------------->
 
-method = name=ID method_properties? ( in_param | inout_param | out_param )* SEMICOLON;
+method = name=ID method_properties? ( in_param | inout_param | out_param | init_prop )* SEMICOLON;
 % method {
 res = AstNode(self.getName())
 
@@ -690,7 +713,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-in_param = LARROW name=ID COLON type=argtype props=param_properties?;
+in_param = (bind_to=name_w_dashes)? LARROW name=ID COLON type=argtype props=param_properties?;
 % in_param {
 res = AstNode(self.getName())
 res.addChild(AstNode('name', astNode['#name'].getText()))
@@ -701,6 +724,9 @@ props = astNode['#props']
 if props:
 	props.setId('')
 	res.addChild(props)
+bind_to = astNode['#bind_to']
+if bind_to:
+	res.addChild(AstNode('bind_to_property', bind_to.getText()))
 return res
 % }
 
@@ -733,6 +759,27 @@ if props:
 	props.setId('')
 	res.addChild(props)
 return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+init_prop = prop_id=name_w_dashes LARROW value=(LITERAL | number | code_value);
+
+% init_prop {
+
+res = AstNode("init_property")
+
+res.addChild(AstNode("name", astNode["#prop_id"].getText()))
+
+value = astNode["#value"]
+if value.getName() != "token":
+	value.setId("")
+else:
+	value = AstNode("literal", value.getText())
+res.addChild(value)
+
+return res
+
 % }
 
 <!----------------------------------------------------------------------------->

@@ -10,9 +10,9 @@
 #define __${CLASS_NAME}_H__
 :> endif
 
-G_BEGIN_DECLS
-
 #include <glib-object.h>
+
+G_BEGIN_DECLS
 
 :> if [ not is_empty(class.super_class) ] then begin
 #include "${filename_wo_suffix(class.super_class)}.h"
@@ -26,19 +26,31 @@ G_BEGIN_DECLS
 :> endedit
 
 :> if [ not is_empty(MODULE_PREFIX) ] then begin
-#define ${MODULE_PREFIX}_TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
-#define ${MODULE_PREFIX}_${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}))
-#define ${MODULE_PREFIX}_IS_${CLASS_NAME}(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
-#define ${MODULE_PREFIX}_${CLASS_NAME}_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
-#define ${MODULE_PREFIX}_IS_${CLASS_NAME}_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
-#define ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
+#define ${MODULE_PREFIX}_TYPE_${CLASS_NAME} \
+	(${class_prefix}_get_type ())
+#define ${MODULE_PREFIX}_${CLASS_NAME}(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}))
+#define ${MODULE_PREFIX}_IS_${CLASS_NAME}(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
+#define ${MODULE_PREFIX}_${CLASS_NAME}_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
+#define ${MODULE_PREFIX}_IS_${CLASS_NAME}_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_TYPE ((klass), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}))
+#define ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), ${MODULE_PREFIX}_TYPE_${CLASS_NAME}, ${FullClassName}Class))
 :> else
-#define TYPE_${CLASS_NAME}            (${class_prefix}_get_type ())
-#define ${CLASS_NAME}(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_${CLASS_NAME}, ${ClassName}))
-#define IS_${CLASS_NAME}(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_${CLASS_NAME}))
-#define ${CLASS_NAME}_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_${CLASS_NAME}, ${ClassName}Class))
-#define IS_${CLASS_NAME}_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TYPE_${CLASS_NAME}))
-#define ${CLASS_NAME}_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_${CLASS_NAME}, ${ClassName}Class))
+#define TYPE_${CLASS_NAME} \
+	(${class_prefix}_get_type ())
+#define ${CLASS_NAME}(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_${CLASS_NAME}, ${ClassName}))
+#define IS_${CLASS_NAME}(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_${CLASS_NAME}))
+#define ${CLASS_NAME}_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_${CLASS_NAME}, ${ClassName}Class))
+#define IS_${CLASS_NAME}_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_TYPE ((klass), TYPE_${CLASS_NAME}))
+#define ${CLASS_NAME}_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_${CLASS_NAME}, ${ClassName}Class))
 :> endif
 
 typedef struct _${FullClassName}      ${FullClassName};

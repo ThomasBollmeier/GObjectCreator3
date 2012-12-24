@@ -21,6 +21,14 @@ class Property(object):
         self.max = max_
         self.default = default
         self.auto_create = auto_create
+        
+    def is_readable(self):
+        
+        return PropAccess.READ in self.access
+
+    def is_writable(self):
+        
+        return PropAccess.WRITE in self.access
 
 class PropType:
 
@@ -36,9 +44,10 @@ class PropType:
 
 class PropAccess:
 
-    READ_ONLY = 1
-    INITIAL_WRITE = 2
-    READ_WRITE = 3
+    READ = 1
+    WRITE = 2
+    INIT = 3
+    INIT_ONLY = 4
 
 class PropGTypeValue(object):
 

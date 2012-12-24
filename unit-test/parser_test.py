@@ -114,6 +114,31 @@ class TestVisitor(AstVisitor):
             self._write(code)
         self._dedent()
 
+    def visit_constructor(self, name, attrs, parameters, prop_inits):
+
+        self._write("Constructor")
+        self._indent()
+        self._write("Attributes: %s" % attrs)
+        if parameters:
+            self._write("Parameters:")
+            self._indent()    
+            for param in parameters:
+                if param.category == Parameter.IN:
+                    self._write("%s: %s (IN) %s" % (param.name, param.arg_type, param.properties))
+                elif param.category == Parameter.IN_OUT:
+                    self._write("%s: %s (INOUT) %s" % (param.name, param.arg_type, param.properties))
+                elif param.category == Parameter.OUT:
+                    self._write("%s (OUT) %s" % (param.arg_type, param.properties))
+            self._dedent()
+        if prop_inits:
+            self._write("PropInits:")
+            self._indent()
+            for prop_init in prop_inits:
+                self._write("%s <- %s" % (prop_init.name, prop_init.value))
+            self._dedent()
+            
+        self._dedent()
+
     def visit_method(self, name, attrs, parameters):
 
         self._write("Method: %s" % name)

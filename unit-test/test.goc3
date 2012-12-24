@@ -1,10 +1,26 @@
-gobject Animal [abstract] {
+module base {
+
+	genum AnimalCatg { FISH, BIRD, MAMMAL }
+
+	gobject Animal [abstract] {
 	
+		properties {
+		
+			category {
+				type = enumeration,
+				gtype = gtypeof(AnimalCatg),
+				access = read & write & init-only
+			}
+		
+		}
+	
+	}
+
 }
 	
 gobject Dog {
 
-	inherits from Animal;
+	inherits from base/Animal;
 	
 	public methods {
 	
@@ -17,14 +33,26 @@ gobject Dog {
 	
 gobject Human [final] {
 	
-	inherits from Animal;
+	inherits from base/Animal;
 		
 	properties {
+
+		first-name {
+			description = "first name",
+			type = string,
+			access = read & write & init-only
+		}
+
+		last-name {
+			description = "last name",
+			type = string,
+			access = read & write & init-only
+		}
 		
 		full-name {
 			description = "full name",
 			type = string,
-			access = read-only
+			access = read
 		}
 			 
 	}
@@ -32,7 +60,8 @@ gobject Human [final] {
 	public methods {
 		
 		Human 
-			<- first_name: string [const]
+			category <- AnimalCatg.MAMMAL
+			first-name <- first_name: string [const]
 			<- last_name: string [const];
 				
 	}

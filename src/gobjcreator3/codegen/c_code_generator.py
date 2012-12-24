@@ -1,16 +1,18 @@
 from gobjcreator3.codegen.code_generator import CodeGenerator
+from gobjcreator3.codegen.output import StdOut
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.type import Type, BuiltIn, Reference, List
 from gobjcreator3.model.method import Parameter
+from gobjcreator3.model.property import PropType, PropAccess
 import os
 import re
 import fabscript
 
 class CCodeGenerator(CodeGenerator):
     
-    def __init__(self, root_module, origin):
+    def __init__(self, root_module, origin, out=StdOut()):
         
-        CodeGenerator.__init__(self, root_module, origin)
+        CodeGenerator.__init__(self, root_module, origin, out)
         
         self._dir_stack = []
         self._cur_dir = ""
@@ -59,7 +61,7 @@ class CCodeGenerator(CodeGenerator):
     def _gen_object_header(self, obj):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(obj)
-        lines = self._get_lines_from_template("gobject_header.template")
+        lines = self._get_lines_from_template("gobject_header.template", file_path)
                 
         self._out.visit_text_file(file_path, lines)
         
@@ -69,18 +71,20 @@ class CCodeGenerator(CodeGenerator):
             return
             
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_prot_header_name(obj)
-        lines = self._get_lines_from_template("gobject_header_prot.template")
+        lines = self._get_lines_from_template("gobject_header_prot.template", file_path)
         
         self._out.visit_text_file(file_path, lines)
             
     def _gen_object_source(self, obj):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(obj)
-        lines = self._get_lines_from_template("gobject_source.template")
+        lines = self._get_lines_from_template("gobject_source.template", file_path)
         
         self._out.visit_text_file(file_path, lines)
         
-    def _get_lines_from_template(self, template_file):
+    def _get_lines_from_template(self, template_file, file_path):
+        
+        self._out.prepare_file_creation(file_path, self._template_processor)
         
         template_path = os.path.dirname(__file__) + os.sep + "templates" + os.sep + "c"
         template_path += os.sep + template_file
@@ -117,6 +121,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
         self._template_processor["TYPE_MACRO"] = self._name_creator.create_type_macro
         self._template_processor["is_empty"] = self._is_empty
+        self._template_processor["literal_trim"] = self._literal_trim
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
         
     def _setup_module_symbols(self, module):
@@ -155,9 +160,24 @@ class CCodeGenerator(CodeGenerator):
         
         self._template_processor["hasProtectedMembers"] = obj.has_protected_members()
         
+        self._template_processor["PROP_NAME"] = self._name_creator.create_property_enum_value
+        self._template_processor["PropType"] = PropType
+        self._template_processor["PropAccess"] = PropAccess
+        self._template_processor["prop_value"] = self._property_value
+        self._template_processor["prop_flags"] = self._property_flags
+        self._template_processor["prop_setter_section"] = self._property_setter_section
+        self._template_processor["prop_getter_section"] = self._property_getter_section
+        
     def _is_empty(self, data):
         
         return bool(data) == False
+    
+    def _literal_trim(self, text):
+        
+        if len(text) > 2:
+            return text[1:-1]
+        else:
+            return ""
     
     def _method_result(self, method):
         
@@ -243,7 +263,44 @@ class CCodeGenerator(CodeGenerator):
             return typename + " " + parname
         else:
             return typename
+        
+    def _property_flags(self, prop):
+        
+        flags = ""
+        for access_mode in prop.access:
+            if flags:
+                flags += "|"
+            flags += {
+                      PropAccess.READ: "G_PARAM_READABLE",
+                      PropAccess.WRITE: "G_PARAM_WRITABLE",
+                      PropAccess.INIT: "G_PARAM_CONSTRUCT",
+                      PropAccess.INIT_ONLY: "G_PARAM_CONSTRUCT_ONLY"
+                      }[access_mode]
                 
+        return flags
+                
+    def _property_value(self, val):
+        
+        if val.literal:
+            return val.literal
+        elif val.number_info:
+            if not val.number_info.decimals:
+                return "%d" % val.number_info.digits
+            else:
+                return "%d.%d" % (val.number_info.digits, val.number_info.decimals)
+        else:
+            enum_name = self._name_creator.create_full_type_name(val.code_info.enumeration)
+            enum_name = self._name_creator.replace_camel_case(enum_name, "_").upper()
+            return enum_name + "_" + val.code_info.code_name 
+        
+    def _property_setter_section(self, prop):
+        
+        return "set_" + prop.name.replace("-", "_").lower()
+
+    def _property_getter_section(self, prop):
+        
+        return "get_" + prop.name.replace("-", "_").lower()
+                                        
 class NameCreator(object):
     
     def __init__(self):
@@ -316,15 +373,22 @@ class NameCreator(object):
         module = type_.module
         while module and module.name:
             if module_prefix:
-                module_prefix = module.name.capitalize() + "_" + module_prefix
+                module_prefix = module.name.upper() + "_" + module_prefix
             else:
-                module_prefix = module.name.capitalize()
+                module_prefix = module.name.upper()
             module = module.module
         
         if module_prefix:
             return module_prefix + "_TYPE_" + basename
         else:
             return "TYPE_" + basename 
+        
+    def create_property_enum_value(self, prop):
+        
+        underscore_name = prop.name.replace("-", "_")
+        underscore_name = "PROP_" + underscore_name.upper()
+        
+        return underscore_name
         
     def _create_elem_base_name(self, module_elem):
         

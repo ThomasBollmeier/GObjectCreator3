@@ -47,6 +47,14 @@ class AstVisitor(object):
     def visit_gflags(self, name, codes, origin):
         pass
     
+    def visit_constructor(self, 
+                          name, 
+                          attributes,
+                          parameters,
+                          prop_inits
+                          ):
+        pass
+        
     def visit_method(self, 
                      name, 
                      attributes,

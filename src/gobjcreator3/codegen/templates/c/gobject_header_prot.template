@@ -10,12 +10,12 @@
 #define __${CLASS_NAME}_PROT_H__
 :> endif
 
-G_BEGIN_DECLS
-
 #include "${filename_wo_suffix(class)}.h"
 :> if [ not is_empty(class.super_class) ] then begin
 #include "${protected_header(class.super_class)}"
 :> endif
+
+G_BEGIN_DECLS
 
 :> edit-section 'top' begin
 /* insert further includes here... */

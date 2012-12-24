@@ -10,7 +10,7 @@ from gobjcreator3.model.ginterface import GInterface
 from gobjcreator3.model.gerror import GError
 from gobjcreator3.model.genum import GEnum
 from gobjcreator3.model.gflags import GFlags
-from gobjcreator3.model.property import Property, PropAccess, PropGTypeValue
+from gobjcreator3.model.property import Property, PropType, PropAccess, PropGTypeValue
 from gobjcreator3.model.property import PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.signal import Signal
 from gobjcreator3.model.method import Method, Parameter
@@ -330,23 +330,29 @@ class CompileStep1(AstVisitor):
         
         self._ginterface = None    
     
+    def visit_constructor(self, 
+                          name, 
+                          attributes,
+                          parameters,
+                          prop_inits
+                          ):
+        
+        constructor = Method("")
+            
+        constructor.set_static()
+        constructor.set_final()
+        constructor.parameters = self._get_constructor_parameters(self._gobject, 
+                                                                  name, 
+                                                                  parameters
+                                                                  )
+                        
+        self._gobject.add_constructor(constructor)
+                    
     def visit_method(self, 
                      name, 
                      attributes,
                      parameters 
                      ):
-        
-        if attributes["constructor"]:
-            
-            constructor = Method("")
-            
-            constructor.set_static()
-            constructor.set_final()
-            constructor.parameters = self._get_constructor_parameters(self._gobject, name, parameters)
-                        
-            self._gobject.add_constructor(constructor)
-            
-            return
         
         if not attributes['overridden']:
 
@@ -406,11 +412,11 @@ class CompileStep1(AstVisitor):
         try:
             ptype = attributes["type"]
         except KeyError:
-            ptype = None
+            ptype = PropType.STRING
         try:
             access = attributes["access"]
         except KeyError:
-            access = PropAccess.READ_ONLY
+            access = [PropAccess.READ]
         try:
             description = attributes["description"]
         except KeyError:

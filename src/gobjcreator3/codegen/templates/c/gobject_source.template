@@ -4,6 +4,75 @@
 /* ... */
 :> endedit
 
+/* 
+ * Global variables to access current class and its parent. 
+ * Will be set in class_init. 
+ */ 
+static ${FullClassName}Class *${class_prefix}_class = NULL;
+static GObjectClass *${class_prefix}_parent_class = NULL; 
+
+:> if [ not is_empty(class.get_properties()) ] then begin
+
+enum 
+{
+	PROP_0,
+	:> for each prop in class.get_properties() do
+	${PROP_NAME(prop)},
+	:> done
+	NUM_PROPERTIES
+};
+
+static GParamSpec *${class_prefix}_properties[NUM_PROPERTIES] = {NULL, };
+
+:> endif
+
+static void 
+${class_prefix}_base_init (gpointer klass)
+{
+
+:> edit-section 'base-init' begin
+/* Add custom base initialization code ... */
+:> endedit
+
+}
+
+static void 
+${class_prefix}_base_finalize (gpointer klass)
+{
+
+:> edit-section 'base-finalize' begin
+/* Add custom base finalization code ... */
+:> endedit
+
+}
+
+static GObject *
+${class_prefix}_constructor (
+	GType gtype,
+	guint num_properties,
+	GObjectConstructParam *properties
+	);
+	
+:> if [ not is_empty(class.get_properties()) ] then begin
+
+static void
+${class_prefix}_set_property (
+	GObject      *object,
+	guint        property_id,
+	const GValue *value,
+	GParamSpec   *pspec
+	);
+	
+static void
+${class_prefix}_get_property (
+	GObject    *object,
+	guint      property_id,
+	GValue     *value,
+	GParamSpec *pspec
+	);
+
+:> endif
+
 static void                
 ${class_prefix}_class_init (
 	gpointer klass,
@@ -11,9 +80,106 @@ ${class_prefix}_class_init (
 	)
 {
 
+	GObjectClass *gobj_class;
+
+	/* set global pointers to class and its parent: */ 
+:> if [ not is_empty(MODULE_PREFIX) ] then begin
+	${class_prefix}_class = ${MODULE_PREFIX}_${CLASS_NAME}_CLASS (klass);
+:> else
+	${class_prefix}_class = ${CLASS_NAME}_CLASS (klass);
+:> endif
+	${class_prefix}_parent_class = g_type_class_peek_parent (${class_prefix}_class);
+	gobj_class = G_OBJECT_CLASS (${class_prefix}_class);
+	
+	gobj_class->constructor = ${class_prefix}_constructor;
+
+:> if [ not is_empty(class.get_properties()) ] then begin
+
+	/* properties */
+	gobj_class->set_property = ${class_prefix}_set_property;
+	gobj_class->get_property = ${class_prefix}_get_property;
+	
+	:> for each prop in class.get_properties() do
+	
+	:> edit-section prop.name begin
+		:> case prop.type in
+			:> PropType.BOOLEAN)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.BYTE)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.INTEGER)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;				
+			:> PropType.FLOAT)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.DOUBLE)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.STRING)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_string (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		"",
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+		);
+			:> PropType.POINTER)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.OBJECT)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+			:> PropType.ENUMERATION)
+	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;			
+		:> endcase
+	:> endedit
+	
+	:> done
+	
+	g_object_class_install_properties (gobj_class,
+		NUM_PROPERTIES,
+		${class_prefix}_properties
+		);
+
+:> endif
+
 :> edit-section 'class-init' begin
 /* Add custom class initialization code ... */
 :> endedit
+
+}
+
+static void
+${class_prefix}_instance_init (
+	GTypeInstance *instance,
+	gpointer klass)
+{
+
+:> edit-section 'instance-init' begin
+/* Add custom instance initialization code ... */
+:> endedit
+
+}
+
+GObject *
+${class_prefix}_constructor (
+	GType gtype,
+	guint num_properties,
+	GObjectConstructParam *properties
+	) 
+{
+
+	/* call parent's constructor first: */ 
+	GObject *newObj = G_OBJECT_CLASS (${class_prefix}_parent_class)->constructor (
+		gtype, 
+		num_properties,
+		properties);
+
+:> edit-section 'constructor' begin
+/* Add custom constructor code ... */
+:> endedit
+
+	return newObj;
 
 }
 
@@ -26,25 +192,129 @@ ${class_prefix}_get_type (void)
 	{
 		const GTypeInfo type_info = {
 	   		sizeof (${FullClassName}Class),
-	   		NULL,           /* base_init */
-	   		NULL,           /* base_finalize */
+	   		(GBaseInitFunc) ${class_prefix}_base_init,
+	   		(GBaseFinalizeFunc) ${class_prefix}_base_finalize,
 	   		(GClassInitFunc) ${class_prefix}_class_init,
-	   		NULL,           /* class_finalize */
-	   		NULL,           /* class_data */
+	   		NULL, /* class finalizer */
+	   		NULL, /* class_data */
 	   		sizeof (${FullClassName}),
-	   		0,              /* n_preallocs */
-	   		(GInstanceInitFunc) NULL /* instance_init */
+	   		0, /* n_preallocs */
+	   		(GInstanceInitFunc) ${class_prefix}_instance_init
 	   		};
     		
-		:> if [ is_empty(class.super_class) ] then begin    		
-    	type = g_type_register_static (G_TYPE_OBJECT,
-    	:> else
-    	type = g_type_register_static (${TYPE_MACRO(class.super_class)},
-    	:> endif
-    		"${FullClassName}", 
-    		&type_info, 
-    		0);	
+		:> if [ is_empty(class.super_class) ] then begin
+		type = g_type_register_static (G_TYPE_OBJECT,
+		:> else
+		type = g_type_register_static (${TYPE_MACRO(class.super_class)},
+		:> endif
+			"${FullClassName}",
+			&type_info,
+			0);	
 	}
 
 	return type;
 }
+
+:> if [ not class.is_abstract ] then begin
+/* 
+ * constructor: 
+ */
+${FullClassName} *
+	:> if [ not is_empty(class.constructor) ] then begin
+${class_prefix}_new (${method_signature(class, class.constructor, suppress_param_names, insert_line_breaks, indent_level)})
+	:> else
+${class_prefix}_new (void)
+	:> endif
+{
+
+	return (${FullClassName}*) g_object_new (${TYPE_MACRO(class)}, NULL);
+
+}
+:> endif
+
+:> if [ not is_empty(class.get_properties()) ] then begin
+
+static void
+${class_prefix}_set_property (
+	GObject      *object,
+	guint        property_id,
+	const GValue *value,
+	GParamSpec   *pspec
+	)
+{
+
+:> define hasSetters = FALSE
+:> for each prop in class.get_properties() where prop.is_writable()	do
+
+	:> if [isFirst] then begin
+	:> edit-section 'set_property' begin
+	/* your variable declarations...*/
+	:> endedit
+	
+		:> hasSetters = TRUE
+	switch (property_id) 
+	{
+	:> endif
+	case ${PROP_NAME(prop)}:
+		:> define section_name = prop_setter_section(prop) 
+		:> edit-section section_name begin
+		g_warning("Class '%s': Setter for property '%s' is not implemented", "${FullClassName}", "${prop.name}");  
+		:> endedit
+		break;
+	:> if [isLast] then begin
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
+	:> endif
+
+:> done
+
+:> if [ not hasSetters ] then begin
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+:> endif
+
+}
+	
+static void
+${class_prefix}_get_property (
+	GObject    *object,
+	guint      property_id,
+	GValue     *value,
+	GParamSpec *pspec
+	)
+{
+
+:> define hasGetters = FALSE
+:> for each prop in class.get_properties() where prop.is_readable() do
+
+	:> if [isFirst] then begin
+	:> edit-section 'get_property' begin
+	/* your variable declarations...*/
+	:> endedit
+	
+		:> hasGetters = TRUE
+	switch (property_id) 
+	{
+	:> endif
+	case ${PROP_NAME(prop)}:
+		:> define section_name = prop_getter_section(prop) 
+		:> edit-section section_name begin
+		g_warning("Class '%s': Getter for property '%s' is not implemented", "${FullClassName}", "${prop.name}");
+		:> endedit
+		break;
+	:> if [isLast] then begin
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
+	:> endif
+:> done
+
+:> if [ not hasGetters ] then begin
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+:> endif
+
+}
+
+:> endif

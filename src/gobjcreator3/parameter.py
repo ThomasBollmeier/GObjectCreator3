@@ -70,4 +70,20 @@ class Parameter(object):
         self.category = category
         self.properties = {}
         
+class ConstructorParam(Parameter):
+    
+    def __init__(self, name, arg_type, category, bind_to_property):
+        
+        Parameter.__init__(self, name, arg_type, category)
+        
+        self.bind_to_property = bind_to_property
+        
+class PropertyInit(object):
+    
+    def __init__(self, name, value):
+        
+        self.name = name
+        self.value = value
+        
+        
         

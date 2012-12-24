@@ -1,4 +1,5 @@
-from gobjcreator3.parameter import Parameter, BuiltIn, FullTypeName, ListOf, RefTo
+from gobjcreator3.parameter import Parameter, ConstructorParam, PropertyInit
+from gobjcreator3.parameter import BuiltIn, FullTypeName, ListOf, RefTo
 from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
@@ -38,11 +39,6 @@ class Interpreter(object):
                                "object": PropType.OBJECT,
                                "enumeration": PropType.ENUMERATION
                                }
-        
-        self._prop_access_map = {"read-only": PropAccess.READ_ONLY,
-                                 "initial-write": PropAccess.INITIAL_WRITE,
-                                 "read-write": PropAccess.READ_WRITE
-                                 }
         
         self._cur_class_name = ""
     
@@ -213,6 +209,8 @@ class Interpreter(object):
             
     def _eval_method(self, ast, visitor, name, visibility):
         
+        is_constructor = ( name == 'constructor' or name == self._cur_class_name )
+        
         props = ast["properties"]
         
         attributes = {"visibility": visibility}
@@ -220,13 +218,23 @@ class Interpreter(object):
         attributes["abstract"] = props and props["abstract"] and True or False
         attributes["overridden"] = props and props["overridden"] and True or False
         attributes["final"] = props and props["final"] and True or False
-        attributes["constructor"] = ( name == 'constructor' or name == self._cur_class_name ) 
+        attributes["constructor"] = is_constructor
         
-        parameters = self._get_method_parameters(ast)
-
-        visitor.visit_method(name, attributes, parameters)
+        parameters_and_inits = self._get_method_parameters(ast, is_constructor)
+        if not is_constructor:
+            parameters = parameters_and_inits
+            visitor.visit_method(name, attributes, parameters)
+        else:
+            parameters = []
+            prop_inits = []
+            for elem in parameters_and_inits:
+                if isinstance(elem, Parameter):
+                    parameters.append(elem)
+                else:
+                    prop_inits.append(elem)
+            visitor.visit_constructor(name, attributes, parameters, prop_inits)
         
-    def _get_method_parameters(self, method):
+    def _get_method_parameters(self, method, is_constructor=False):
         
         parameters = []
         
@@ -241,15 +249,34 @@ class Interpreter(object):
                 pname = child["name"].getText()
                 argtype_node = child.getChildren()[1]
             elif catg_name == "out_param":
+                if is_constructor:
+                    raise Exception("OUT parameters are not allowed in constructor of class '%s'" % self._cur_class_name)
                 category = Parameter.OUT
                 pname = ""
                 argtype_node = child.getChildren()[0]
+            elif catg_name == "init_property":
+                if is_constructor:
+                    prop_name = child['name'].getText()
+                    value_node = child.getChildren()[1]
+                    prop_value = self._eval_prop_value(value_node)
+                    prop_init = PropertyInit(prop_name, prop_value)
+                    parameters.append(prop_init)
+                    continue
+                else:
+                    raise Exception("Method '%s': properties must only be set in constructor" % method.name)
             else:
                 continue
             argtype = self._eval_arg_type(argtype_node)
-                
-            param = Parameter(pname, argtype, category)
+            bind_to_node = child["bind_to_property"]
             
+            if not is_constructor:
+                if bind_to_node:
+                    raise Exception("Method '%s': property binding is allowed in constructor only" % method.name)
+                param = Parameter(pname, argtype, category)
+            else:
+                bind_to_property = bind_to_node and bind_to_node.getText() or ""
+                param = ConstructorParam(pname, argtype, category, bind_to_property)
+                            
             props = child["properties"]
             if props:
                 for p in props.getChildren():
@@ -296,7 +323,7 @@ class Interpreter(object):
                 elif cname == "type":
                     attrs["type"] = self._prop_type_map[child.getText()]
                 elif cname == "access":
-                    attrs["access"] = self._prop_access_map[child.getText()]
+                    attrs["access"] = self._eval_prop_access(child)
                 elif cname == "description":
                     attrs["description"] = child.getText()
                 elif cname == "gtype":
@@ -306,6 +333,23 @@ class Interpreter(object):
                 elif cname == "auto-create":
                     attrs["auto-create"] = True
             visitor.visit_property(name, attrs)
+            
+    def _eval_prop_access(self, ast):
+        
+        access_modes = []
+        
+        for mode in ast.getChildren():
+            name = mode.getName()
+            if name == "read":
+                access_modes.append(PropAccess.READ)
+            elif name == "write":
+                access_modes.append(PropAccess.WRITE)
+            elif name == "init":
+                access_modes.append(PropAccess.INIT)
+            elif name == "init-only":
+                access_modes.append(PropAccess.INIT_ONLY)
+        
+        return access_modes
             
     def _eval_prop_gtype(self, ast):
         
