@@ -1,0 +1,56 @@
+#include <glib-object.h>
+
+#define g_marshal_value_peek_string(v) (char*) g_value_get_string (v)
+
+:> for each name in marshaller_names do
+
+	:> define minfo = marshallers[name]
+void
+${minfo.method_name} (
+	GClosure     *closure,
+	GValue       *return_value,
+	guint        n_param_values,
+	const GValue *param_values,
+	gpointer     invocation_hint,
+	gpointer     marshal_data
+	)
+{
+	
+	typedef void (*${minfo.typedef_name}) (
+		gpointer data1,
+		:> for each param in minfo.get_parameters() do
+		${param.type} ${param.name},
+		:> done
+		gpointer data2
+		);
+		
+	${minfo.typedef_name} callback;
+	GCClosure *cc = (GCClosure*) closure;
+	gpointer data1;
+	gpointer data2;
+	
+	g_return_if_fail (n_param_values == ${minfo.get_num_arguments()});
+	
+	if (G_CCLOSURE_SWAP_DATA (closure))
+	{
+		data1 = closure->data;
+		data2 = g_value_peek_pointer (param_values + 0);
+	}
+	else
+	{
+		data1 = g_value_peek_pointer (param_values + 0);
+		data2 = closure->data;
+	}
+	
+	callback = (${minfo.typedef_name}) (marshal_data ? marshal_data : cc->callback);
+  	callback (
+  		data1,
+  		:> for each param in minfo.get_parameters() do
+ 	 	${param.peek_func} (param_values + ${param.offset}),
+  		:> done
+  		data2
+  		);
+ 
+}
+
+:> done 

@@ -1,5 +1,6 @@
 from gobjcreator3.codegen.code_generator import CodeGenerator
 from gobjcreator3.codegen.output import StdOut
+from gobjcreator3.codegen.c_marshaller_generator import CMarshallerGenerator
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.type import Type, BuiltIn, Reference, List
 from gobjcreator3.model.method import Parameter
@@ -49,6 +50,15 @@ class CCodeGenerator(CodeGenerator):
             self._gen_object_header(obj)
             self._gen_object_prot_header(obj)
             self._gen_object_source(obj)
+            if obj.has_signals():
+                self._gen_object_marshallers(obj)
+            
+        enums = [enum for enum in module.enumerations if enum.filepath_origin == self._origin]
+        
+        for enum in enums:
+            self._setup_genum_symbols(enum)
+            self._gen_enum_header(enum)
+            self._gen_enum_source(enum)
                     
         self._out.exit_dir(self._cur_dir)
 
@@ -82,6 +92,43 @@ class CCodeGenerator(CodeGenerator):
         
         self._out.visit_text_file(file_path, lines)
         
+    def _gen_object_marshallers(self, obj):
+        
+        header_guard = "__"
+        modprefix = self._template_processor.getSymbol("MODULE_PREFIX")
+        if modprefix:
+            header_guard += modprefix + "_"
+        header_guard += self._template_processor.getSymbol("CLASS_NAME")
+        header_guard += "_MARSHALLER_H__"
+        
+        class_prefix = self._template_processor.getSymbol("class_prefix")
+        signals = obj.get_signals()
+        generator = CMarshallerGenerator(header_guard, class_prefix, signals, self._out)
+        
+        header_file_path = self._cur_dir + os.sep
+        header_file_path += self._name_creator.create_obj_marshaller_header_name(obj)
+        
+        generator.generate_header(header_file_path)
+        
+        source_file_path = self._cur_dir + os.sep
+        source_file_path += self._name_creator.create_obj_marshaller_source_name(obj)
+        
+        generator.generate_source(source_file_path)
+        
+    def _gen_enum_header(self, enum):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".h"
+        lines = self._get_lines_from_template("genum_header.template", file_path)
+        
+        self._out.visit_text_file(file_path, lines)
+                
+    def _gen_enum_source(self, enum):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".c"
+        lines = self._get_lines_from_template("genum_source.template", file_path)
+        
+        self._out.visit_text_file(file_path, lines)
+                        
     def _get_lines_from_template(self, template_file, file_path):
         
         self._out.prepare_file_creation(file_path, self._template_processor)
@@ -120,8 +167,11 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["PRIVATE"] = Visibility.PRIVATE
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
         self._template_processor["TYPE_MACRO"] = self._name_creator.create_type_macro
+        self._template_processor["CAST_MACRO"] = self._name_creator.create_cast_macro
         self._template_processor["is_empty"] = self._is_empty
+        self._template_processor["is_none"] = self._is_none
         self._template_processor["literal_trim"] = self._literal_trim
+        self._template_processor["length"] = self._length
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
         
     def _setup_module_symbols(self, module):
@@ -138,6 +188,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["module_prefix"] = prefix.lower()
         self._template_processor["MODULE_PREFIX"] = prefix.upper() 
         self._template_processor["ModulePrefix"] = camel_case_prefix
+        self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix
                 
     def _setup_gobject_symbols(self, obj):
         
@@ -153,7 +204,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["class_prefix"] = prefix
         
         self._template_processor["protected_header"] = self._name_creator.create_obj_prot_header_name
-        self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix
+        self._template_processor["marshaller_header"] = self._name_creator.create_obj_marshaller_header_name
         
         self._template_processor["method_result"] = self._method_result
         self._template_processor["method_signature"] = self._method_signature
@@ -164,13 +215,33 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["PropType"] = PropType
         self._template_processor["PropAccess"] = PropAccess
         self._template_processor["prop_value"] = self._property_value
+        self._template_processor["prop_gtype"] = self._property_gtype
         self._template_processor["prop_flags"] = self._property_flags
         self._template_processor["prop_setter_section"] = self._property_setter_section
         self._template_processor["prop_getter_section"] = self._property_getter_section
         
+        self._template_processor["signal_tech_name"] = self._signal_technical_name
+        self._template_processor["signal_section_id"] = self._signal_section_id
+        
+    def _setup_genum_symbols(self, enum):
+        
+        self._template_processor["enum"] = enum
+        self._template_processor["ENUM_NAME"] = self._name_creator.replace_camel_case(enum.name, "_").upper()
+        self._template_processor["FullEnumName"] = self._template_processor.getSymbol("ModulePrefix") + enum.name
+        
+        prefix = self._name_creator.replace_camel_case(enum.name, "_").lower()
+        module_prefix = self._template_processor.getSymbol("module_prefix")
+        if module_prefix:
+            prefix = module_prefix + "_" + prefix
+        self._template_processor["enum_prefix"] = prefix
+        
     def _is_empty(self, data):
         
         return bool(data) == False
+    
+    def _is_none(self, data):
+        
+        return data is None
     
     def _literal_trim(self, text):
         
@@ -178,6 +249,10 @@ class CCodeGenerator(CodeGenerator):
             return text[1:-1]
         else:
             return ""
+        
+    def _length(self, data):
+        
+        return len(data)
     
     def _method_result(self, method):
         
@@ -200,7 +275,8 @@ class CCodeGenerator(CodeGenerator):
                           method,
                           suppress_param_names=False,
                           insert_line_breaks=True,
-                          indent_level=1
+                          indent_level=1,
+                          instance_name="self"
                           ):
         
         res = ""
@@ -217,7 +293,7 @@ class CCodeGenerator(CodeGenerator):
                 
         if not method.is_static:
             cls_type = self._name_creator.create_full_type_name(cls) 
-            params.insert(0, (cls_type + "*", "self"))
+            params.insert(0, (cls_type + "*", instance_name))
             
         if len(params) == 0:
             
@@ -248,6 +324,14 @@ class CCodeGenerator(CodeGenerator):
                 res += indent_level * "\t"
                 
         return res
+    
+    def _signal_technical_name(self, signal):
+        
+        return signal.name.replace("-", "_")
+    
+    def _signal_section_id(self, signal):
+        
+        return "signal_" + self._signal_technical_name(signal)
     
     def _rearrange_asterisk(self, typename, parname=None):
         
@@ -288,10 +372,19 @@ class CCodeGenerator(CodeGenerator):
                 return "%d" % val.number_info.digits
             else:
                 return "%d.%d" % (val.number_info.digits, val.number_info.decimals)
-        else:
+        elif val.code_info:
             enum_name = self._name_creator.create_full_type_name(val.code_info.enumeration)
             enum_name = self._name_creator.replace_camel_case(enum_name, "_").upper()
-            return enum_name + "_" + val.code_info.code_name 
+            return enum_name + "_" + val.code_info.code_name
+        elif val.boolean is not None:
+            return val.boolean and "TRUE" or "FALSE"
+        
+    def _property_gtype(self, gtype_value):
+        
+        if gtype_value.gtype_id:
+            return gtype_value.gtype_id
+        else:
+            return self._name_creator.create_type_macro(gtype_value.type)
         
     def _property_setter_section(self, prop):
         
@@ -335,6 +428,14 @@ class NameCreator(object):
     def create_obj_source_name(self, obj):
         
         return self._create_elem_base_name(obj) + ".c"
+    
+    def create_obj_marshaller_header_name(self, obj):
+        
+        return self._create_elem_base_name(obj) + self._file_name_sep + "marshaller.h"
+
+    def create_obj_marshaller_source_name(self, obj):
+        
+        return self._create_elem_base_name(obj) + self._file_name_sep + "marshaller.c"
 
     def create_full_type_name(self, type_, with_asterisk=False):
         
@@ -382,6 +483,24 @@ class NameCreator(object):
             return module_prefix + "_TYPE_" + basename
         else:
             return "TYPE_" + basename 
+
+    def create_cast_macro(self, type_):
+        
+        basename = self.replace_camel_case(type_.name, "_").upper()
+
+        module_prefix = ""
+        module = type_.module
+        while module and module.name:
+            if module_prefix:
+                module_prefix = module.name.upper() + "_" + module_prefix
+            else:
+                module_prefix = module.name.upper()
+            module = module.module
+        
+        if module_prefix:
+            return module_prefix + "_" + basename
+        else:
+            return basename 
         
     def create_property_enum_value(self, prop):
         

@@ -1,6 +1,6 @@
 module base {
 
-	genum AnimalCatg { FISH, BIRD, MAMMAL }
+	genum AnimalCatg { UNDEFINED=99, FISH=100, BIRD, MAMMAL }
 
 	gobject Animal [abstract] {
 	
@@ -9,9 +9,23 @@ module base {
 			category {
 				type = enumeration,
 				gtype = gtypeof(AnimalCatg),
+				default = AnimalCatg.UNDEFINED,
 				access = read & write & init-only
 			}
 		
+		}
+		
+		public methods {
+
+			constructor
+				<- category: AnimalCatg;
+						
+		}
+		
+		private attributes {
+			
+			category: AnimalCatg;
+			
 		}
 	
 	}
@@ -25,7 +39,10 @@ gobject Dog {
 	public methods {
 	
 		Dog
+			category <- base/AnimalCatg.MAMMAL
 			<- name: string [const];
+			
+		bark;
 		
 	}
 	
@@ -34,6 +51,19 @@ gobject Dog {
 gobject Human [final] {
 	
 	inherits from base/Animal;
+	
+	signals {
+	
+		hello;
+	
+		weight-changed
+			<- new_weight: float
+			<- old_weight: float;
+			
+		has-married
+			<- partner: Human;
+		
+	}
 		
 	properties {
 
@@ -54,16 +84,55 @@ gobject Human [final] {
 			type = string,
 			access = read
 		}
+		
+		is-male {
+			description = "gender info",
+			type = boolean,
+			default = true,
+			access = read & write & init
+		}
+		
+		weight {
+			description = "weight in kg",
+			type = float,
+			access = read & write & init
+		}
+		
+		dress_code {
+			type = byte,
+			max = 100
+		}
+		
+		first-child {
+			description = "first child",
+			type = object,
+			gtype = gtypeof(Human),
+			access = read & write
+		}
 			 
 	}
 		
 	public methods {
 		
 		Human 
-			category <- AnimalCatg.MAMMAL
+			category <- base/AnimalCatg.MAMMAL
 			first-name <- first_name: string [const]
-			<- last_name: string [const];
+			last-name <- last_name: string [const]
+			weight <- weight: float;
 				
+	}
+	
+	private attributes {
+		
+		first_name: string;
+		last_name: string;
+	
+	}
+
+	private attributes {
+		
+		weight: float;
+	
 	}
 		
 }

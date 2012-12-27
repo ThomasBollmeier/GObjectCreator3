@@ -58,9 +58,28 @@ struct _${FullClassName}ClsProtected
 }
 :> endif
 
-:> define suppress_param_names = FALSE
+:> define supress_param_names = FALSE
 :> define insert_line_breaks = TRUE
 :> define indent_level = 1
+
+:> if [ not class.is_final and not is_empty(class.constructor) ] then begin
+	:> define cparams = class.constructor.parameters 
+	:> case length(cparams) in
+		:> 1)
+void
+${class_prefix}_initialize_ (${FullClassName} *self);
+		:> 2)
+void
+${class_prefix}_initialize_ (
+	${FullClassName} *self, 
+	${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)}
+	);	
+		:> *)		
+void
+${class_prefix}_initialize_ (
+	${FullClassName} *self, ${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)});	
+	:> endcase
+:> endif
  
 :> for each method in class.methods where method.visibility == PROTECTED do
 	:> if [ isFirst ] then begin
@@ -70,7 +89,7 @@ struct _${FullClassName}ClsProtected
  	
  	:> endif	
 ${method_result(method)}
-${class_prefix}_${method.name} (${method_signature(class, method, suppress_param_names, insert_line_breaks, indent_level)});   	
+${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});   	
 
 :> done
 

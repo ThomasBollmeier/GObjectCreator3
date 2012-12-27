@@ -237,6 +237,7 @@ class Interpreter(object):
     def _get_method_parameters(self, method, is_constructor=False):
         
         parameters = []
+        method_name = method["name"].getText()
         
         for child in method.getChildren():
             catg_name = child.getName()
@@ -263,7 +264,7 @@ class Interpreter(object):
                     parameters.append(prop_init)
                     continue
                 else:
-                    raise Exception("Method '%s': properties must only be set in constructor" % method.name)
+                    raise Exception("Method '%s': properties must only be set in constructor" % method_name)
             else:
                 continue
             argtype = self._eval_arg_type(argtype_node)
@@ -271,7 +272,7 @@ class Interpreter(object):
             
             if not is_constructor:
                 if bind_to_node:
-                    raise Exception("Method '%s': property binding is allowed in constructor only" % method.name)
+                    raise Exception("Method '%s': property binding is allowed in constructor only" % method_name)
                 param = Parameter(pname, argtype, category)
             else:
                 bind_to_property = bind_to_node and bind_to_node.getText() or ""
@@ -329,9 +330,8 @@ class Interpreter(object):
                 elif cname == "gtype":
                     attrs["gtype"] = self._eval_prop_gtype(child)
                 elif cname in ["min", "max", "default"]:
-                    attrs[cname] = self._eval_prop_value(child)
-                elif cname == "auto-create":
-                    attrs["auto-create"] = True
+                    value_node = child.getChildren()[0]
+                    attrs[cname] = self._eval_prop_value(value_node)
             visitor.visit_property(name, attrs)
             
     def _eval_prop_access(self, ast):
@@ -367,24 +367,28 @@ class Interpreter(object):
         
         return res
     
-    def _eval_prop_value(self, ast):
+    def _eval_prop_value(self, value_node):
         
         value = PropValue()
         
-        value_node = ast.getChildren()[0]
         name = value_node.getName()
         
         if name == "literal":
             value.literal = value_node.getText()
         elif name == "number":
-            digits = value_node['digits'].getText()
+            digits = int(value_node['digits'].getText())
             decimals_node = value_node['decimals']
-            decimals = decimals_node and decimals_node.getText() or None
+            if decimals_node:
+                decimals = int(decimals_node.getText())
+            else:
+                decimals = None
             value.number_info = PropNumberInfo(digits, decimals)
         elif name == "code_value":
             enumeration_name = self._eval_full_type_name(value_node['full_type_name'])
             code_name = value_node['code'].getText()
             value.code_info = PropCodeInfo(enumeration_name, code_name)
+        elif name == "boolean":
+            value.boolean = ( value_node.getText() == "true" )
             
         return value 
                             

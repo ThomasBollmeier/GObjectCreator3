@@ -42,6 +42,30 @@ class Method(object):
         
         self.is_final = is_final
         
+class ConstructorMethod(Method):
+    
+    def __init__(self):
+        
+        Method.__init__(self, "")
+
+        self.is_static = True
+        self.is_abstract = False
+        self.is_final = True
+        
+        self.prop_inits = []
+        
+    def set_static(self, is_static=True):
+        
+        raise Exception("'set_static' must not be called for constructors")
+                
+    def set_abstract(self, is_abstract=True):
+        
+        raise Exception("'set_abstract' must not be called for constructors")
+                    
+    def set_final(self, is_final=True):
+        
+        raise Exception("'set_final' must not be called for constructors")
+                
 class Parameter(object):
     
     IN = 1
@@ -54,3 +78,18 @@ class Parameter(object):
         self.type = type_
         self.direction = direction
         self.modifiers = []
+        
+class ConstructorParam(Parameter):
+    
+    def __init__(self, name, type_, direction, bind_to_property):
+        
+        Parameter.__init__(self, name, type_, direction)
+        
+        self.bind_to_property = bind_to_property
+
+class PropertyInit(object):
+    
+    def __init__(self, name, value):
+        
+        self.name = name
+        self.value = value

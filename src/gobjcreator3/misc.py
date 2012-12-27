@@ -12,6 +12,7 @@ class PropValue(object):
         self.literal = None
         self.number_info = None
         self.code_info = None
+        self.boolean = None
         
 class PropNumberInfo(object):
     

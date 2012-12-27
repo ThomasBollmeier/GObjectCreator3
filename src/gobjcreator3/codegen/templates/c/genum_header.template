@@ -1,0 +1,46 @@
+/*
+ * ...Copyright/Licensing information...
+ */
+ 
+:> if [ not is_empty(enum.module) ] then begin
+#ifndef __${MODULE_PREFIX}_${ENUM_NAME}_H__
+#define __${MODULE_PREFIX}_${ENUM_NAME}_H__
+:> else
+#ifndef __${ENUM_NAME}_H__
+#define __${ENUM_NAME}_H__
+:> endif
+
+#include <glib-object.h>
+
+G_BEGIN_DECLS
+
+typedef enum _${FullEnumName} {
+:> for each name_val in enum.code_names_values do
+	:> if [ not isLast ] then begin
+		:> if [ is_none(name_val[1]) ] then begin
+	${CAST_MACRO(enum)}_${name_val[0]},
+		:> else
+	${CAST_MACRO(enum)}_${name_val[0]} = ${name_val[1]},
+		:> endif
+	:> else
+		:> if [ is_none(name_val[1]) ] then begin
+	${CAST_MACRO(enum)}_${name_val[0]}
+		:> else
+	${CAST_MACRO(enum)}_${name_val[0]} = ${name_val[1]}
+		:> endif
+	:> endif
+:> done
+} ${FullEnumName};
+
+GType
+${enum_prefix}_get_type (void);
+
+#define ${TYPE_MACRO(enum)} ${enum_prefix}_get_type()
+
+G_END_DECLS
+
+:> if [ not is_empty(enum.module) ] then begin
+#endif /* __${MODULE_PREFIX}_${ENUM_NAME}_H__ */
+:> else
+#endif /* __${ENUM_NAME}_H__ */
+:> endif

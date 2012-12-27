@@ -1,8 +1,71 @@
+:> if [ class.has_protected_members() or not class.is_final ] then begin
+#include "${protected_header(class)}"
+:> else
 #include "${filename_wo_suffix(class)}.h"
+	:> if [ not is_empty(class.super_class) ] then begin
+#include "${protected_header(class.super_class)}"
+	:> endif
+:> endif
+
+:> if [ class.has_signals() ] then begin
+# include "${marshaller_header(class)}"
+:> endif
 
 :> edit-section 'source-top' begin
 /* ... */
 :> endedit
+
+:> define supress_param_names = FALSE
+:> define insert_line_breaks = TRUE
+:> define indent_level = 1
+
+:> define hasPrivAttrs = FALSE
+:> define hasPrivClassAttrs = FALSE
+:> define hasProtAttrs = FALSE
+:> define hasProtClassAttrs = FALSE
+:> for each a in class.get_attributes() do
+	:> case a.visibility in
+	:> PROTECTED)
+		:> if [ not a.is_static ] then begin
+			:> hasProtAttrs = TRUE
+		:> else
+			:> hasProtClassAttrs = TRUE
+		:> endif
+	:> PRIVATE)
+		:> if [ not a.is_static ] then begin
+			:> hasPrivAttrs = TRUE
+		:> else
+			:> hasPrivClassAttrs = TRUE
+		:> endif
+	:> endcase
+:> done
+
+:> if [ hasPrivAttrs ] then begin
+struct _${FullClassName}Private  
+{
+:> for each attr in class.get_attributes() where \
+	attr.visibility == PRIVATE and \
+	attr.is_static == FALSE \
+	do
+	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
+:> done
+};
+
+# define ${CAST_MACRO(class)}_GET_PRIVATE(obj) \
+	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), ${TYPE_MACRO(class)}, ${FullClassName}Private))
+:> endif
+
+:> if [ hasPrivClassAttrs ] then begin
+struct _${FullClassName}ClsPrivate 
+{
+:> for each attr in class.get_attributes() where \
+	attr.visibility == PRIVATE and \
+	attr.is_static == TRUE \
+	do
+	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
+:> done
+}
+:> endif
 
 /* 
  * Global variables to access current class and its parent. 
@@ -53,6 +116,12 @@ ${class_prefix}_constructor (
 	GObjectConstructParam *properties
 	);
 	
+static void
+${class_prefix}_dispose (GObject* obj);
+
+static void
+${class_prefix}_finalize (GObject* obj);
+	
 :> if [ not is_empty(class.get_properties()) ] then begin
 
 static void
@@ -92,6 +161,13 @@ ${class_prefix}_class_init (
 	gobj_class = G_OBJECT_CLASS (${class_prefix}_class);
 	
 	gobj_class->constructor = ${class_prefix}_constructor;
+	gobj_class->dispose = ${class_prefix}_dispose;
+	gobj_class->finalize = ${class_prefix}_finalize;
+	
+:> if [ hasPrivAttrs ] then begin
+	/* register structure that contains private attributes: */
+	g_type_class_add_private (klass, sizeof (${FullClassName}Private));
+:> endif
 
 :> if [ not is_empty(class.get_properties()) ] then begin
 
@@ -104,15 +180,105 @@ ${class_prefix}_class_init (
 	:> edit-section prop.name begin
 		:> case prop.type in
 			:> PropType.BOOLEAN)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_boolean (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		FALSE,
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+		);
 			:> PropType.BYTE)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_uchar (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.min) ] then begin
+		${prop_value(prop.min)},
+		:> else
+		0,
+		:> endif	
+		:> if [ not is_empty(prop.max) ] then begin
+		${prop_value(prop.max)},
+		:> else
+		255,
+		:> endif	
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		0,
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+		);
 			:> PropType.INTEGER)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;				
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_int (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.min) ] then begin
+		${prop_value(prop.min)},
+		:> else
+		G_MININT,
+		:> endif	
+		:> if [ not is_empty(prop.max) ] then begin
+		${prop_value(prop.max)},
+		:> else
+		G_MAXINT,
+		:> endif	
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		0,
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+		);
 			:> PropType.FLOAT)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_float (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.min) ] then begin
+		${prop_value(prop.min)},
+		:> else
+		G_MINFLOAT,
+		:> endif	
+		:> if [ not is_empty(prop.max) ] then begin
+		${prop_value(prop.max)},
+		:> else
+		G_MAXFLOAT,
+		:> endif	
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		0,
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+		);
 			:> PropType.DOUBLE)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_double (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		:> if [ not is_empty(prop.min) ] then begin
+		${prop_value(prop.min)},
+		:> else
+		G_MINDOUBLE,
+		:> endif	
+		:> if [ not is_empty(prop.max) ] then begin
+		${prop_value(prop.max)},
+		:> else
+		G_MAXDOUBLE,
+		:> endif	
+		:> if [ not is_empty(prop.default) ] then begin
+		${prop_value(prop.default)},
+		:> else
+		0,
+		:> endif
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+		);
 			:> PropType.STRING)
 	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_string (
 		"${prop.name}",
@@ -126,11 +292,29 @@ ${class_prefix}_class_init (
 		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
 		);
 			:> PropType.POINTER)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_pointer (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+		);
 			:> PropType.OBJECT)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_object (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		${prop_gtype(prop.gtype)},
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+		);
 			:> PropType.ENUMERATION)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = NULL;			
+	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_enum (
+		"${prop.name}",
+		"${prop.name}",
+		"${literal_trim(prop.description)}",
+		${prop_gtype(prop.gtype)},
+		${prop_value(prop.default)},
+		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+		);			
 		:> endcase
 	:> endedit
 	
@@ -140,6 +324,24 @@ ${class_prefix}_class_init (
 		NUM_PROPERTIES,
 		${class_prefix}_properties
 		);
+
+:> endif
+
+:> if [ class.has_signals() ] then begin
+
+	:> for each signal in class.get_signals() do
+	
+		:> if [ isFirst ] then begin
+	/* signals */
+		
+		:> endif
+		:> define section_name = signal_section_id(signal) 
+	:> edit-section section_name begin
+	// register ... 
+	
+	:> endedit
+	
+	:> done
 
 :> endif
 
@@ -154,6 +356,12 @@ ${class_prefix}_instance_init (
 	GTypeInstance *instance,
 	gpointer klass)
 {
+
+	${FullClassName} *self = ${CAST_MACRO(class)} (instance);
+
+:> if [ hasPrivAttrs ] then begin
+	self->priv = ${CAST_MACRO(class)}_GET_PRIVATE (self);
+:> endif
 
 :> edit-section 'instance-init' begin
 /* Add custom instance initialization code ... */
@@ -170,7 +378,7 @@ ${class_prefix}_constructor (
 {
 
 	/* call parent's constructor first: */ 
-	GObject *newObj = G_OBJECT_CLASS (${class_prefix}_parent_class)->constructor (
+	GObject *new_obj = G_OBJECT_CLASS (${class_prefix}_parent_class)->constructor (
 		gtype, 
 		num_properties,
 		properties);
@@ -179,7 +387,7 @@ ${class_prefix}_constructor (
 /* Add custom constructor code ... */
 :> endedit
 
-	return newObj;
+	return new_obj;
 
 }
 
@@ -209,7 +417,11 @@ ${class_prefix}_get_type (void)
 		:> endif
 			"${FullClassName}",
 			&type_info,
+			:> if [ class.is_abstract ] then begin
+			G_TYPE_FLAG_ABSTRACT);
+			:> else
 			0);	
+			:> endif
 	}
 
 	return type;
@@ -221,16 +433,100 @@ ${class_prefix}_get_type (void)
  */
 ${FullClassName} *
 	:> if [ not is_empty(class.constructor) ] then begin
-${class_prefix}_new (${method_signature(class, class.constructor, suppress_param_names, insert_line_breaks, indent_level)})
+${class_prefix}_new (${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)})
 	:> else
 ${class_prefix}_new (void)
 	:> endif
 {
 
-	return (${FullClassName}*) g_object_new (${TYPE_MACRO(class)}, NULL);
+	${FullClassName} *new_instance = NULL;
+	
+	:> define constructor = class.constructor
+	:> define doneConstructor = FALSE
+
+	:> for each param in constructor.parameters where \
+		not is_empty(param.bind_to_property) \
+		do
+		:> if [isFirst] then begin
+	new_instance = ${CAST_MACRO(class)} (g_object_new (${TYPE_MACRO(class)},
+			:> doneConstructor = TRUE
+		:> endif
+		"${param.bind_to_property}", ${param.name},
+	:> done
+	:> for each prop_init in constructor.prop_inits do
+		:> if [isFirst and not doneConstructor] then begin
+	new_instance = ${CAST_MACRO(class)} (g_object_new (${TYPE_MACRO(class)},
+			:> doneConstructor = TRUE
+		:> endif
+		"${prop_init.name}", ${prop_value(prop_init.value)},
+	:> done
+	:> if [doneConstructor] then begin
+		NULL));
+	:> else
+	new_instance = ${CAST_MACRO(class)} (g_object_new (${TYPE_MACRO(class)}, NULL));
+	:> endif
+	
+	:> edit-section 'new' begin
+	/* your instance initialization code ... */
+	:> endedit
+	
+	return new_instance;
 
 }
 :> endif
+
+:> if [ not class.is_final and not is_empty(class.constructor) ] then begin
+	:> define cparams = class.constructor.parameters 
+	:> case length(cparams) in
+		:> 1)
+void
+${class_prefix}_initialize_ (${FullClassName} *self)
+		:> 2)
+void
+${class_prefix}_initialize_ (
+	${FullClassName} *self, 
+	${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)}
+	)
+		:> *)		
+void
+${class_prefix}_initialize_ (
+	${FullClassName} *self, ${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)})	
+	:> endcase
+:> endif
+{
+	:> edit-section 'initialize_' begin
+	/* initialize ... */
+	:> endedit
+}
+
+static void
+${class_prefix}_dispose (GObject* obj) 
+{
+	:> edit-section 'dispose' begin
+	/* 
+	 * In dispose, you are supposed to free all types referenced from this
+ 	 * object which might themselves hold a reference to self. Generally,
+ 	 * the most simple solution is to unref all members on which you own a 
+ 	 * reference.
+ 	 */	
+	:> endedit
+	
+	/* chain up to super class: */
+	G_OBJECT_CLASS (${class_prefix}_parent_class)->dispose (obj);
+
+}
+
+static void
+${class_prefix}_finalize (GObject* obj)
+{
+	:> edit-section 'finalize' begin
+	/* Free allocated memory here ... */
+	:> endedit
+
+	/* chain up to super class: */
+	G_OBJECT_CLASS (${class_prefix}_parent_class)->finalize (obj);
+
+}
 
 :> if [ not is_empty(class.get_properties()) ] then begin
 
@@ -244,7 +540,7 @@ ${class_prefix}_set_property (
 {
 
 :> define hasSetters = FALSE
-:> for each prop in class.get_properties() where prop.is_writable()	do
+:> for each prop in class.get_properties() where prop.is_writable() do
 
 	:> if [isFirst] then begin
 	:> edit-section 'set_property' begin

@@ -1,0 +1,38 @@
+/*
+ * ...Copyright/Licensing information...
+ */
+ 
+#include "${filename_wo_suffix(enum)}.h"
+
+GType
+${enum_prefix}_get_type (void)
+{
+
+	static GType gtype = NULL;
+	GEnumValue *values;
+	guint idx;
+	
+	if (gtype == NULL) 
+	{
+		values = g_new (GEnumValue, ${length(enum.code_names_values)} + 1);
+		idx = 0;
+		
+		:> for each name_val in enum.code_names_values do
+		values[idx].value = ${CAST_MACRO(enum)}_${name_val[0]};
+		values[idx].value_name = "${name_val[0]}";
+		values[idx].value_nick = "${name_val[0]}";
+		idx++;
+        
+		:> done
+		values[idx].value = 0;
+		values[idx].value_name = NULL;
+		values[idx].value_nick = NULL;
+        		
+		gtype = g_enum_register_static ("${FullEnumName}", values);
+	
+	}
+		
+	return gtype;
+
+}
+

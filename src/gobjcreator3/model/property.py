@@ -8,8 +8,7 @@ class Property(object):
         gtype,
         min_,
         max_,
-        default,
-        auto_create
+        default
         ):
 
         self.name = name
@@ -20,7 +19,6 @@ class Property(object):
         self.min = min_
         self.max = max_
         self.default = default
-        self.auto_create = auto_create
         
     def is_readable(self):
         
@@ -72,6 +70,7 @@ class PropValue(object):
         self.literal = None
         self.number_info = None
         self.code_info = None
+        self.boolean = None
         
     def __str__(self):
         
@@ -84,6 +83,8 @@ class PropValue(object):
                 return "%d.%d" % (self.number_info.digits, self.number_info.decimals)
         elif self.code_info:
             return "%s->%s" % (self.code_info.enumeration, self.code_info.code_name)
+        elif self.boolean is not None:
+            return self.boolean and "true" or "false"
         else:
             return "<undefined property value>"
         

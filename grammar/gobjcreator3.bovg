@@ -417,8 +417,7 @@ prop_content =
 	prop_access | 
 	prop_description |
 	prop_gtype |
-	prop_value |
-	prop_auto_create
+	prop_value
 	;
 % prop_content {
 return astNode.getChildren()[0]
@@ -512,7 +511,8 @@ return res
 <!----------------------------------------------------------------------------->
 
 prop_value = 
-	lhs=( 'max' | 'min' | 'default' ) ASSIGN rhs=( LITERAL | number | code_value );
+	lhs=( 'max' | 'min' | 'default' ) ASSIGN 
+	rhs=( LITERAL | number | code_value | boolean_literal );
 	
 % prop_value {
 
@@ -552,6 +552,16 @@ return res
 
 <!----------------------------------------------------------------------------->
 
+boolean_literal = 'true' | 'false';
+
+% boolean_literal {
+
+return AstNode('boolean', astNode.getChildren()[0].getText());
+
+% }
+
+<!----------------------------------------------------------------------------->
+
 code_value = enum=full_type_name DOT code=ID;
 
 % code_value {
@@ -566,16 +576,6 @@ code = astNode['#code']
 res.addChild(AstNode('code', code.getText()))
 
 return res
-
-% }
-
-<!----------------------------------------------------------------------------->
-
-prop_auto_create = 'auto' DASH 'create';
-
-% prop_auto_create {
-
-return AstNode('auto-create')
 
 % }
 

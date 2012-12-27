@@ -116,7 +116,17 @@ struct _${FullClassName}Class
   	${type_name(class.super_class)}Class super;
   	:> endif
 
-  	/* class members */
+  	/* == class members == */
+  	
+  	:> for each signal in class.get_signals() do
+  		:> if [ isFirst ] then begin
+  	/* = signals = */
+  	
+  		:> endif
+  	void // ${signal.name}
+  	(*${signal_tech_name(signal)}) (${method_signature(class, signal, FALSE, TRUE, 2, "sender")});
+  	
+  	:> done
 
 	:> if [ hasProtClassAttrs ] then begin
 	${FullClassName}ClsProtected *prot; /* protected attributes */
@@ -130,7 +140,7 @@ struct _${FullClassName}Class
 GType 
 ${class_prefix}_get_type (void);
 
-:> define suppress_param_names = FALSE
+:> define supress_param_names = FALSE
 :> define insert_line_breaks = TRUE
 :> define indent_level = 1
 
@@ -140,7 +150,7 @@ ${class_prefix}_get_type (void);
  */
 ${FullClassName} *
 	:> if [ not is_empty(class.constructor) ] then begin
-${class_prefix}_new (${method_signature(class, class.constructor, suppress_param_names, insert_line_breaks, indent_level)});
+${class_prefix}_new (${method_signature(class, class.constructor, supress_param_names, insert_line_breaks, indent_level)});
 	:> else
 ${class_prefix}_new (void);
 	:> endif
@@ -154,13 +164,13 @@ ${class_prefix}_new (void);
  	
  	:> endif	
 ${method_result(method)}
-${class_prefix}_${method.name} (${method_signature(class, method, suppress_param_names, insert_line_breaks, indent_level)});   	
+${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});   	
 
 :> done
 
 G_END_DECLS
 
-:> if [ not is_empty(MODULE_PREFIX) ] then begin
+:> if [ not is_empty(class.module) ] then begin
 #endif /* __${MODULE_PREFIX}_${CLASS_NAME}_H__ */
 :> else
 #endif /* __${CLASS_NAME}_H__ */

@@ -165,6 +165,10 @@ class GObject(ClsIntf):
         else:
             return bool([meth for meth in self.methods if meth.visibility == Visibility.PROTECTED])
             
+    def has_signals(self):
+        
+        return bool(self.get_signals())
+        
 class MethodInfo(object):
     
     def __init__(self, method, def_origin):

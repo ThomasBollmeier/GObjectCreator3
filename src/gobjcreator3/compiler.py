@@ -13,7 +13,8 @@ from gobjcreator3.model.gflags import GFlags
 from gobjcreator3.model.property import Property, PropType, PropAccess, PropGTypeValue
 from gobjcreator3.model.property import PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.signal import Signal
-from gobjcreator3.model.method import Method, Parameter
+from gobjcreator3.model.method import Method, Parameter 
+from gobjcreator3.model.method import ConstructorMethod, ConstructorParam, PropertyInit
 from gobjcreator3.model.attribute import Attribute
 from gobjcreator3.model.visibility import Visibility
 
@@ -229,6 +230,8 @@ class CompileStep1(AstVisitor):
             if not enumeration.has_code(code_name):
                 raise Exception("Code '%s' is not defined in enumeration '%s'!" % (code_name, value_info.code_info.enumeration_name))
             res.code_info = PropCodeInfo(enumeration, code_name)
+        elif value_info.boolean is not None:
+            res.boolean = value_info.boolean
         
         return res
     
@@ -261,17 +264,31 @@ class CompileStep1(AstVisitor):
         return res
     
     def _get_constructor_parameters(self, cls, method_name, parameters):
+
+        res = []
         
-        params = self._get_parameters(method_name, parameters)
-        
-        for param in params:
-            if param.direction == Parameter.OUT:
+        for param in parameters:
+            pname = param.name 
+            ptype = self._get_param_type(param.arg_type)
+            direction = {
+                         Param.IN: Parameter.IN,
+                         Param.OUT: Parameter.OUT,
+                         Param.IN_OUT: Parameter.IN_OUT
+                         }[param.category]
+            if direction == Parameter.OUT:
                 raise Exception("Constructor '%s' must not have a result parameter!" % method_name)
+                                
+            param_obj = ConstructorParam(pname, ptype, direction, param.bind_to_property)
             
+            if "const" in param.properties:
+                param_obj.modifiers.append("const")
+
+            res.append(param_obj)
+
         # Add class type as (implicit) result:
-        params.append(Parameter("", cls, Parameter.OUT))
-        
-        return params
+        res.append(ConstructorParam("", cls, Parameter.OUT, ""))
+            
+        return res
         
     # Visitor methods:
     
@@ -337,14 +354,19 @@ class CompileStep1(AstVisitor):
                           prop_inits
                           ):
         
-        constructor = Method("")
+        constructor = ConstructorMethod()
             
-        constructor.set_static()
-        constructor.set_final()
         constructor.parameters = self._get_constructor_parameters(self._gobject, 
                                                                   name, 
                                                                   parameters
                                                                   )
+        
+        for prop_init in prop_inits:
+            
+            prop_name = prop_init.name
+            prop_value = self._get_prop_value(prop_init.value)
+            
+            constructor.prop_inits.append(PropertyInit(prop_name, prop_value))
                         
         self._gobject.add_constructor(constructor)
                     
@@ -420,7 +442,7 @@ class CompileStep1(AstVisitor):
         try:
             description = attributes["description"]
         except KeyError:
-            description = ""
+            description = '"%s"' % pname
         try:
             gtype = self._get_gtype(attributes["gtype"])
         except KeyError:
@@ -437,11 +459,7 @@ class CompileStep1(AstVisitor):
             default = self._get_prop_value(attributes["default"])
         except KeyError:
             default = None
-        try:
-            auto_create = attributes["auto-create"]
-        except KeyError:
-            auto_create = False
-        
+         
         prop = Property(pname, 
                         ptype,
                         access,
@@ -449,8 +467,7 @@ class CompileStep1(AstVisitor):
                         gtype,
                         min_,
                         max_,
-                        default,
-                        auto_create
+                        default
                         )   
         
         self._gobject.add_property(prop)  
