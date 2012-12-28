@@ -6,7 +6,6 @@
 #include "${protected_header(class.super_class)}"
 	:> endif
 :> endif
-
 :> if [ class.has_signals() ] then begin
 # include "${marshaller_header(class)}"
 :> endif
@@ -86,6 +85,20 @@ enum
 };
 
 static GParamSpec *${class_prefix}_properties[NUM_PROPERTIES] = {NULL, };
+
+:> endif
+
+:> if [ class.has_signals() ] then begin
+
+enum
+{
+	:> for each signal in class.get_signals() do
+	SIGNAL_${to_upper(signal_tech_name(signal))},
+	:> done
+	NUM_SIGNALS
+};
+
+static guint *${class_prefix}_signals[NUM_SIGNALS];
 
 :> endif
 
@@ -331,14 +344,30 @@ ${class_prefix}_class_init (
 
 	:> for each signal in class.get_signals() do
 	
+		:> define input_params = signal.get_input_params()
+		:> define num_input_params = length(input_params)
+	
 		:> if [ isFirst ] then begin
 	/* signals */
 		
 		:> endif
 		:> define section_name = signal_section_id(signal) 
 	:> edit-section section_name begin
-	// register ... 
-	
+	${class_prefix}_signals[SIGNAL_${to_upper(signal_tech_name(signal))}] = g_signal_new_valist (
+		"${signal.name}",
+		${TYPE_MACRO(class)},
+		G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,
+		closure,
+		NULL, /* accumulator */
+		NULL, /* accumulator data */
+		marshaller_func,
+		G_TYPE_NONE, /* return type */
+		:> if [ num_input_params <> 0 ] then begin
+		${num_input_params},
+		:> else
+		${num_input_params}
+		:> endif
+		);
 	:> endedit
 	
 	:> done

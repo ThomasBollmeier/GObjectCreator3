@@ -1,4 +1,4 @@
-from gobjcreator3.model.method import Method
+from gobjcreator3.model.method import Method, Parameter
 from gobjcreator3.model.visibility import Visibility
 
 class Signal(Method):
@@ -11,3 +11,7 @@ class Signal(Method):
         self.visibility = Visibility.PUBLIC
         self.set_abstract(True)
         self.set_static(False)
+        
+    def get_input_params(self):
+        
+        return [p for p in self.parameters if p.direction != Parameter.OUT]

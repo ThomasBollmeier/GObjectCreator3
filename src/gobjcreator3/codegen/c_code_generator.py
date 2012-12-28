@@ -172,6 +172,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["is_none"] = self._is_none
         self._template_processor["literal_trim"] = self._literal_trim
         self._template_processor["length"] = self._length
+        self._template_processor["to_upper"] = self._to_upper
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
         
     def _setup_module_symbols(self, module):
@@ -243,6 +244,10 @@ class CCodeGenerator(CodeGenerator):
         
         return data is None
     
+    def _to_upper(self, text):
+        
+        return text.upper()
+    
     def _literal_trim(self, text):
         
         if len(text) > 2:
@@ -252,7 +257,10 @@ class CCodeGenerator(CodeGenerator):
         
     def _length(self, data):
         
-        return len(data)
+        try:
+            return len(data)
+        except TypeError as error:
+            raise error
     
     def _method_result(self, method):
         
