@@ -61,8 +61,9 @@ gobject Human [final] {
 			<- old_weight: float;
 			
 		has-married
-			<- partner: Human;
-		
+			<- partner: Human
+			<- info: string;
+					
 	}
 		
 	properties {

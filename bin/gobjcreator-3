@@ -17,6 +17,7 @@ parser.add_argument(
 	)
 parser.add_argument(
 	"-d", "--dir", 
+	default=os.curdir,
 	help="directory where files will be generated in"
 	) 
 

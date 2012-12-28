@@ -1,10 +1,13 @@
 import fabscript
 import os
 import gobjcreator3.model.type as type_def
+from gobjcreator3.codegen.name_creator import NameCreator
 
 class CMarshallerNameCreator(object):
     
     def __init__(self, func_prefix):
+        
+        self._name_creator = NameCreator()
         
         self._func_prefix = func_prefix
         
@@ -54,12 +57,8 @@ class CMarshallerNameCreator(object):
         catg = type_.category
         if catg == type_def.Type.BUILTIN:
             res = self._builtin_type_map[type_.name]
-        elif catg == type_def.Type.ENUMERATION:
-            res = "gint"
-        elif catg == type_def.Type.OBJECT:
-            res = "gpointer"
         else:
-            raise Exception('Unsupported type category for signal parameters')
+            res = self._name_creator.create_full_type_name(type_, with_asterisk=True)
         
         return res        
  
@@ -73,8 +72,8 @@ class CMarshallerNameCreator(object):
             res = self._builtin_func_map[type_.name]
         elif catg == type_def.Type.ENUMERATION:
             res = "g_value_get_int"
-        elif catg == type_def.Type.OBJECT:
-            res = "g_value_get_pointer"
+        elif catg == type_def.Type.OBJECT or catg == type_def.Type.INTERFACE:
+            res = "g_value_get_object"
         else:
             raise Exception('Unsupported type category for signal parameters')
         
@@ -109,6 +108,8 @@ class CMarshallerNameCreator(object):
             res = "ENUM"
         elif catg == type_def.Type.OBJECT:
             res = "OBJECT"
+        elif catg == type_def.Type.INTERFACE:
+            res = "IFACE"
         else:
             raise Exception('Unsupported type category for signal parameters')
         

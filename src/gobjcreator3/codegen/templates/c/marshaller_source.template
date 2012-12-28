@@ -1,4 +1,7 @@
 #include <glib-object.h>
+:> edit-section 'other_includes' begin
+/* insert your headers here... */
+:> endedit 
 
 #define g_marshal_value_peek_string(v) (char*) g_value_get_string (v)
 

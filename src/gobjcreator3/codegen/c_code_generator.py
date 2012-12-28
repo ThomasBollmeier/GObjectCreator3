@@ -1,8 +1,9 @@
 from gobjcreator3.codegen.code_generator import CodeGenerator
 from gobjcreator3.codegen.output import StdOut
-from gobjcreator3.codegen.c_marshaller_generator import CMarshallerGenerator
+from gobjcreator3.codegen.name_creator import NameCreator
+from gobjcreator3.codegen.c_marshaller_generator import CMarshallerGenerator, CMarshallerNameCreator
+from gobjcreator3.model.type import Type
 from gobjcreator3.model.visibility import Visibility
-from gobjcreator3.model.type import Type, BuiltIn, Reference, List
 from gobjcreator3.model.method import Parameter
 from gobjcreator3.model.property import PropType, PropAccess
 import os
@@ -222,7 +223,13 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["prop_getter_section"] = self._property_getter_section
         
         self._template_processor["signal_tech_name"] = self._signal_technical_name
-        self._template_processor["signal_section_id"] = self._signal_section_id
+        self._template_processor["signal_section_defhandler"] = self._signal_section_defhandler
+        
+        if obj.has_signals():
+            self._marshaller_names = CMarshallerNameCreator(prefix)
+            self._template_processor["marshaller_func"] = self._marshaller_names.create_marshaller_name
+        else:
+            self._marshaller_names = None
         
     def _setup_genum_symbols(self, enum):
         
@@ -337,9 +344,9 @@ class CCodeGenerator(CodeGenerator):
         
         return signal.name.replace("-", "_")
     
-    def _signal_section_id(self, signal):
+    def _signal_section_defhandler(self, signal):
         
-        return "signal_" + self._signal_technical_name(signal)
+        return "default_handler_" + self._signal_technical_name(signal)
     
     def _rearrange_asterisk(self, typename, parname=None):
         
@@ -401,131 +408,4 @@ class CCodeGenerator(CodeGenerator):
     def _property_getter_section(self, prop):
         
         return "get_" + prop.name.replace("-", "_").lower()
-                                        
-class NameCreator(object):
-    
-    def __init__(self):
-        
-        self._file_name_sep = "-"
-
-    def replace_camel_case(self, text, replace_char="_"):
-        
-        res = ""
-        
-        prev = None
-        for ch in text:
-            if prev and prev.lower() == prev and ch.lower() != ch:
-                res += replace_char
-            res += ch
-            prev = ch
-            
-        return res
-    
-    def create_filename_wo_suffix(self, elem):
-        
-        return self._create_elem_base_name(elem)
-    
-    def create_obj_header_name(self, obj):
-        
-        return self._create_elem_base_name(obj) + ".h"
-
-    def create_obj_prot_header_name(self, obj):
-        
-        return self._create_elem_base_name(obj) + self._file_name_sep + "protected.h"
-
-    def create_obj_source_name(self, obj):
-        
-        return self._create_elem_base_name(obj) + ".c"
-    
-    def create_obj_marshaller_header_name(self, obj):
-        
-        return self._create_elem_base_name(obj) + self._file_name_sep + "marshaller.h"
-
-    def create_obj_marshaller_source_name(self, obj):
-        
-        return self._create_elem_base_name(obj) + self._file_name_sep + "marshaller.c"
-
-    def create_full_type_name(self, type_, with_asterisk=False):
-        
-        if isinstance(type_, Reference):
-            res = self.create_full_type_name(type_.target_type) + "*"
-        elif isinstance(type_, List):
-            res = self.create_full_type_name(type_.line_type) + "*"
-        elif isinstance(type_, BuiltIn):
-            res = {"string" : "gchar*",
-                   "boolean": "gboolean",
-                   "integer": "gint",
-                   "unsigned integer": "guint",
-                   "float": "gfloat",
-                   "double": "gdouble",
-                   "any": "gpointer"
-                   }[type_.name]
-        else:
-            res = type_.name
-                        
-            module = type_.module
-            while module and module.name:
-                res = module.name.capitalize() + res
-                module = module.module
-                
-            if with_asterisk:
-                if type_.category in [Type.OBJECT, Type.INTERFACE]:
-                    res += "*"
-        
-        return res
-    
-    def create_type_macro(self, type_):
-        
-        basename = self.replace_camel_case(type_.name, "_").upper()
-
-        module_prefix = ""
-        module = type_.module
-        while module and module.name:
-            if module_prefix:
-                module_prefix = module.name.upper() + "_" + module_prefix
-            else:
-                module_prefix = module.name.upper()
-            module = module.module
-        
-        if module_prefix:
-            return module_prefix + "_TYPE_" + basename
-        else:
-            return "TYPE_" + basename 
-
-    def create_cast_macro(self, type_):
-        
-        basename = self.replace_camel_case(type_.name, "_").upper()
-
-        module_prefix = ""
-        module = type_.module
-        while module and module.name:
-            if module_prefix:
-                module_prefix = module.name.upper() + "_" + module_prefix
-            else:
-                module_prefix = module.name.upper()
-            module = module.module
-        
-        if module_prefix:
-            return module_prefix + "_" + basename
-        else:
-            return basename 
-        
-    def create_property_enum_value(self, prop):
-        
-        underscore_name = prop.name.replace("-", "_")
-        underscore_name = "PROP_" + underscore_name.upper()
-        
-        return underscore_name
-        
-    def _create_elem_base_name(self, module_elem):
-        
-        res = self.replace_camel_case(module_elem.name, self._file_name_sep)
-        
-        module = module_elem.module
-        while module and module.name:
-            res = module.name + self._file_name_sep + res
-            module = module.module
-            
-        res = res.lower()
-        
-        return res 
+                                       
