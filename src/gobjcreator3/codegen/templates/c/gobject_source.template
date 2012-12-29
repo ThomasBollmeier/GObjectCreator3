@@ -132,7 +132,7 @@ ${class_prefix}_register_signal (
 
 } 
 
-	:> for each signal in class.get_signals() do
+	:> for each signal in class.get_signals() where signal.has_default_handler == TRUE do
 
 static void 
 ${class_prefix}_on_${signal_tech_name(signal)} (${method_signature(class, signal, FALSE, TRUE, 1, "sender")})
@@ -146,6 +146,45 @@ ${class_prefix}_on_${signal_tech_name(signal)} (${method_signature(class, signal
 	:> done
 
 :> endif
+
+:> for each method in class.methods where not method.is_final and not method.is_abstract do
+
+	:> if [ isFirst ] then begin
+/* default implementations for non-final methods */
+
+	:> endif
+
+static ${method_result(method)}
+${class_prefix}_${method.name}_im (${method_signature(class, method, FALSE, TRUE, 1)})
+{
+
+	:> edit-section method.name begin
+	/* add your method implementation here...*/
+	:> endedit
+
+}
+
+:> done
+
+:> for each method_name in class.overridden do
+	:> if [ isFirst ] then begin
+/* implementations of overridden methods */
+
+	:> endif
+
+static ${method_result(method_by_name(class, method_name))}
+${class_prefix}_${method_name}_im (${method_signature_by_name(class, method_name, FALSE, TRUE, 1)})
+{
+
+	:> edit-section method_name begin
+	/* add your method implementation here...*/
+	:> endedit
+
+}
+
+:> done
+
+:> if [ config.generate_base_functions ] then begin
 
 static void 
 ${class_prefix}_base_init (gpointer klass)
@@ -167,12 +206,18 @@ ${class_prefix}_base_finalize (gpointer klass)
 
 }
 
+:> endif
+
+:> if [ config.generate_constructor ] then begin
+
 static GObject *
 ${class_prefix}_constructor (
 	GType gtype,
 	guint num_properties,
 	GObjectConstructParam *properties
 	);
+	
+:> endif
 	
 static void
 ${class_prefix}_dispose (GObject* obj);
@@ -209,7 +254,7 @@ ${class_prefix}_class_init (
 
 	GObjectClass *gobj_class;
 	:> if [ class.has_signals() ] then begin
-	GClosure *closure;
+	GClosure *default_closure;
 	:> endif
 
 	/* set global pointers to class and its parent: */ 
@@ -221,17 +266,30 @@ ${class_prefix}_class_init (
 	${class_prefix}_parent_class = g_type_class_peek_parent (${class_prefix}_class);
 	gobj_class = G_OBJECT_CLASS (${class_prefix}_class);
 	
+:> if [ config.generate_constructor ] then begin
 	gobj_class->constructor = ${class_prefix}_constructor;
+:> endif	
 	gobj_class->dispose = ${class_prefix}_dispose;
 	gobj_class->finalize = ${class_prefix}_finalize;
 
-:> for each signal in class.get_signals() do 
-	:> if [ isFirst ] then begin
-	/* default handlers for signals: */
-	:> endif
-	${class_prefix}_class->${signal_tech_name(signal)} = ${class_prefix}_on_${signal_tech_name(signal)};
-:> done 
+	:> for each method in class.methods where not method.is_final do
+		:> if [ isFirst ] then begin
+	/* default implementations for non-final methods: */
+		:> endif
+		:> if [ not method.is_abstract ] then begin
+	${class_prefix}_class->${method.name} = ${class_prefix}_${method.name}_im;
+		:> else
+	${class_prefix}_class->${method.name} = NULL;
+		:> endif
+	:> done 
 	
+	:> for each method_name in class.overridden do
+		:> if [ isFirst ] then begin
+	/* register overridden methods: */
+		:> endif
+	${method_def_class_cast(class, method_name)} (klass)->${method_name} = ${class_prefix}_${method_name}_im;
+	:> done
+
 :> if [ hasPrivAttrs ] then begin
 	/* register structure that contains private attributes: */
 	g_type_class_add_private (klass, sizeof (${FullClassName}Private));
@@ -245,7 +303,6 @@ ${class_prefix}_class_init (
 	
 	:> for each prop in class.get_properties() do
 	
-	:> edit-section prop.name begin
 		:> case prop.type in
 			:> PropType.BOOLEAN)
 	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_boolean (
@@ -384,7 +441,6 @@ ${class_prefix}_class_init (
 		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
 		);			
 		:> endcase
-	:> endedit
 	
 	:> done
 	
@@ -407,15 +463,19 @@ ${class_prefix}_class_init (
 		
 		:> endif
 		
-	closure = g_cclosure_new (
-		G_CALLBACK (${class_prefix}_class->${signal_tech_name(signal)}), 
+		:> if [ signal.has_default_handler ] then begin
+	default_closure = g_cclosure_new (
+		G_CALLBACK (${class_prefix}_on_${signal_tech_name(signal)}), 
 		NULL, 
 		NULL
 		);
+		:> else
+	default_closure = NULL;
+		:> endif
 	
 	${class_prefix}_signals[SIGNAL_${to_upper(signal_tech_name(signal))}] = ${class_prefix}_register_signal (
 		"${signal.name}",
-		closure,
+		default_closure,
 		(GSignalCMarshaller) ${marshaller_func(signal)},
 		G_TYPE_NONE, /* return type */
 		:> if [ num_input_params > 0 ] then begin
@@ -460,6 +520,8 @@ ${class_prefix}_instance_init (
 
 }
 
+:> if [ config.generate_constructor ] then begin
+
 GObject *
 ${class_prefix}_constructor (
 	GType gtype,
@@ -482,6 +544,8 @@ ${class_prefix}_constructor (
 
 }
 
+:> endif
+
 GType 
 ${class_prefix}_get_type (void) 
 {
@@ -491,10 +555,15 @@ ${class_prefix}_get_type (void)
 	{
 		const GTypeInfo type_info = {
 	   		sizeof (${FullClassName}Class),
+	   		:> if [ config.generate_base_functions ] then begin
 	   		(GBaseInitFunc) ${class_prefix}_base_init,
 	   		(GBaseFinalizeFunc) ${class_prefix}_base_finalize,
+	   		:> else
+	   		NULL, /* base init */
+	   		NULL, /* base finalize */
+	   		:> endif
 	   		(GClassInitFunc) ${class_prefix}_class_init,
-	   		NULL, /* class finalizer */
+	   		NULL, /* class finalize */
 	   		NULL, /* class_data */
 	   		sizeof (${FullClassName}),
 	   		0, /* n_preallocs */
@@ -708,3 +777,44 @@ ${class_prefix}_get_property (
 }
 
 :> endif
+
+:> for each method in class.methods do
+	:> if [ isFirst ] then begin
+/* == implementation of methods == */
+
+	:> endif
+	:> if [ method.visibility == PRIVATE ] then begin
+static ${method_result(method)}
+	:> else
+${method_result(method)}
+	:> endif	
+${class_prefix}_${method.name} (${method_signature(class, method, FALSE, TRUE, 1)})
+{
+	
+	:> if [ method.is_final ] then begin
+	
+	:> edit-section method.name begin
+	/* add your method implementation here...*/
+	:> endedit
+	
+	:> else
+	
+		:> if [ not is_empty(class.module) ] then begin
+	${FullClassName}Class *klass = ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS (self);
+		:> else
+	${FullClassName}Class *klass = ${CLASS_NAME}_GET_CLASS (self);
+		:> endif
+	
+	g_assert (klass->${method.name} != NULL);
+	
+		:> if [ not method.returns_result() ] then begin
+	klass->${method.name} (${method_call_args(method, TRUE, 2)});
+		:> else
+	return klass->${method.name} (${method_call_args(method, TRUE, 2)});
+		:> endif
+	
+	:> endif
+	
+}
+	
+:> done

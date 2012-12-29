@@ -116,18 +116,16 @@ struct _${FullClassName}Class
   	${type_name(class.super_class)}Class super;
   	:> endif
 
-  	/* == class members == */
-  	
-  	:> for each signal in class.get_signals() do
-  		:> if [ isFirst ] then begin
-  	/* = signals = */
-  	
-  		:> endif
-  	void // ${signal.name}
-  	(*${signal_tech_name(signal)}) (${method_signature(class, signal, FALSE, TRUE, 2, "sender")});
-  	
-  	:> done
+	:> for each method in class.methods where not method.is_final do
+		:> if [ isFirst ] then begin
+	/* non-final methods: */
+	
+		:> endif
+	${method_result(method)} 
+	(*${method.name}) (${method_signature(class, method, FALSE, TRUE, 2)});
 
+	:> done
+	  	
 	:> if [ hasProtClassAttrs ] then begin
 	${FullClassName}ClsProtected *prot; /* protected attributes */
 	:> endif	

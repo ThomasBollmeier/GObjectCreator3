@@ -226,13 +226,13 @@ all_token_types.append(KEY_38)
 KEY_39 = token.Keyword('false', caseSensitive=True)
 all_token_types.append(KEY_39)
 
-KEY_40 = token.Keyword('auto', caseSensitive=True)
+KEY_40 = token.Keyword('signals', caseSensitive=True)
 all_token_types.append(KEY_40)
 
-KEY_41 = token.Keyword('create', caseSensitive=True)
+KEY_41 = token.Keyword('has', caseSensitive=True)
 all_token_types.append(KEY_41)
 
-KEY_42 = token.Keyword('signals', caseSensitive=True)
+KEY_42 = token.Keyword('handler', caseSensitive=True)
 all_token_types.append(KEY_42)
 
 KEY_43 = token.Keyword('methods', caseSensitive=True)
@@ -977,42 +977,45 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 		return grammar.tokenNode(KEY_54)
 		
-class _PropAutoCreateRule(grammar.Rule):
+class _VisibilityRule(grammar.Rule):
 
 	def __init__(self, ident=''):
 	
-		grammar.Rule.__init__(self, 'prop_auto_create', ident)
+		grammar.Rule.__init__(self, 'visibility', ident)
 		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
+		start.connect(self._sub_2()).connect(end)
+		start.connect(self._sub_3()).connect(end)
 		
 	def transform(self, astNode):
 		
-		
-		return AstNode('auto-create')
-		
+		return AstNode(self.getName(), astNode.getChildren()[0].getText())
 		
 	def _sub_1(self):
 		
-		elements = []
-		elements.append(self._sub_1_1())
-		elements.append(self._sub_1_2())
-		elements.append(self._sub_1_3())
-		
-		return grammar.Sequence(elements)
+		return self._sub_1_1()
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_40)
+		return grammar.tokenNode(KEY_45)
 		
-	def _sub_1_2(self):
+	def _sub_2(self):
 		
-		return grammar.tokenNode(DASH)
+		return self._sub_2_1()
 		
-	def _sub_1_3(self):
+	def _sub_2_1(self):
 		
-		return grammar.tokenNode(KEY_41)
+		return grammar.tokenNode(KEY_46)
+		
+	def _sub_3(self):
+		
+		return self._sub_3_1()
+		
+	def _sub_3_1(self):
+		
+		return grammar.tokenNode(KEY_47)
 		
 class _NameWDashesRule(grammar.Rule):
 
@@ -1191,46 +1194,6 @@ class _EnumCodeRule(grammar.Rule):
 	def _sub_1_2_1_2(self):
 		
 		return grammar.tokenNode(UINT, 'value')
-		
-class _VisibilityRule(grammar.Rule):
-
-	def __init__(self, ident=''):
-	
-		grammar.Rule.__init__(self, 'visibility', ident)
-		
-	def expand(self, start, end, context):
-		
-		start.connect(self._sub_1()).connect(end)
-		start.connect(self._sub_2()).connect(end)
-		start.connect(self._sub_3()).connect(end)
-		
-	def transform(self, astNode):
-		
-		return AstNode(self.getName(), astNode.getChildren()[0].getText())
-		
-	def _sub_1(self):
-		
-		return self._sub_1_1()
-		
-	def _sub_1_1(self):
-		
-		return grammar.tokenNode(KEY_45)
-		
-	def _sub_2(self):
-		
-		return self._sub_2_1()
-		
-	def _sub_2_1(self):
-		
-		return grammar.tokenNode(KEY_46)
-		
-	def _sub_3(self):
-		
-		return self._sub_3_1()
-		
-	def _sub_3_1(self):
-		
-		return grammar.tokenNode(KEY_47)
 		
 class _GerrorRule(grammar.Rule):
 
@@ -2694,7 +2657,6 @@ class _PropContentRule(grammar.Rule):
 		start.connect(self._sub_3()).connect(end)
 		start.connect(self._sub_4()).connect(end)
 		start.connect(self._sub_5()).connect(end)
-		start.connect(self._sub_6()).connect(end)
 		
 	def transform(self, astNode):
 		
@@ -2739,14 +2701,6 @@ class _PropContentRule(grammar.Rule):
 	def _sub_5_1(self):
 		
 		return _PropValueRule()
-		
-	def _sub_6(self):
-		
-		return self._sub_6_1()
-		
-	def _sub_6_1(self):
-		
-		return _PropAutoCreateRule()
 		
 class _AttributeRule(grammar.Rule):
 
@@ -2941,6 +2895,9 @@ class _SignalRule(grammar.Rule):
 			p.setId('')
 			res.addChild(p)
 		
+		if astNode['#default']:
+			res.addChild(AstNode('default'))
+		
 		return res
 		
 	def _sub_1(self):
@@ -2949,6 +2906,7 @@ class _SignalRule(grammar.Rule):
 		elements.append(self._sub_1_1())
 		elements.append(self._sub_1_2())
 		elements.append(self._sub_1_3())
+		elements.append(self._sub_1_4())
 		
 		return grammar.Sequence(elements)
 		
@@ -2958,9 +2916,54 @@ class _SignalRule(grammar.Rule):
 		
 	def _sub_1_2(self):
 		
-		return grammar.zeroToMany(_InParamRule())
+		return grammar.zeroToOne(self._sub_1_2_1())
+		
+	def _sub_1_2_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_2_1_1())
+		elements.append(self._sub_1_2_1_2())
+		elements.append(self._sub_1_2_1_3())
+		elements.append(self._sub_1_2_1_4())
+		elements.append(self._sub_1_2_1_5())
+		elements.append(self._sub_1_2_1_6())
+		elements.append(self._sub_1_2_1_7())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_2_1_1(self):
+		
+		return grammar.tokenNode(LSBRACKET)
+		
+	def _sub_1_2_1_2(self):
+		
+		return grammar.tokenNode(KEY_41)
+		
+	def _sub_1_2_1_3(self):
+		
+		return grammar.tokenNode(DASH)
+		
+	def _sub_1_2_1_4(self):
+		
+		return grammar.tokenNode(KEY_37, 'default')
+		
+	def _sub_1_2_1_5(self):
+		
+		return grammar.tokenNode(DASH)
+		
+	def _sub_1_2_1_6(self):
+		
+		return grammar.tokenNode(KEY_42)
+		
+	def _sub_1_2_1_7(self):
+		
+		return grammar.tokenNode(RSBRACKET)
 		
 	def _sub_1_3(self):
+		
+		return grammar.zeroToMany(_InParamRule())
+		
+	def _sub_1_4(self):
 		
 		return grammar.tokenNode(SEMICOLON)
 		
@@ -3217,7 +3220,7 @@ class _SignalsRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_42)
+		return grammar.tokenNode(KEY_40)
 		
 	def _sub_1_2(self):
 		

@@ -19,6 +19,9 @@ module base {
 
 			constructor
 				<- category: AnimalCatg;
+				
+			talk [abstract]
+				<- message: string;
 						
 		}
 		
@@ -42,7 +45,7 @@ gobject Dog {
 			category <- base/AnimalCatg.MAMMAL
 			<- name: string [const];
 			
-		bark;
+		bark [final];
 		
 	}
 	
@@ -56,7 +59,7 @@ gobject Human [final] {
 	
 		hello;
 	
-		weight-changed
+		weight-changed [has-default-handler]
 			<- new_weight: float
 			<- old_weight: float;
 			
@@ -120,6 +123,8 @@ gobject Human [final] {
 			first-name <- first_name: string [const]
 			last-name <- last_name: string [const]
 			weight <- weight: float;
+			
+		talk [overridden];
 				
 	}
 	

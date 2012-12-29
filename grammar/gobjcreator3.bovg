@@ -594,7 +594,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-signal = name=name_w_dashes in_param* SEMICOLON;
+signal = name=name_w_dashes (LSBRACKET 'has' DASH default='default' DASH 'handler' RSBRACKET)? in_param* SEMICOLON;
 
 % signal {
 res = AstNode(self.getName())
@@ -606,6 +606,9 @@ res.addChild(name)
 for p in astNode.getChildrenByName('in_param'):
 	p.setId('')
 	res.addChild(p)
+	
+if astNode['#default']:
+	res.addChild(AstNode('default'))
 
 return res
 % }

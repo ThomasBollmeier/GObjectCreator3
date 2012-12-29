@@ -474,9 +474,13 @@ class CompileStep1(AstVisitor):
         
     def visit_signal(self,
                      name,
-                     parameters
+                     parameters,
+                     has_default_handler
                      ):
         
-        signal = Signal(name, self._get_parameters(name, parameters))
+        signal = Signal(name, 
+                        self._get_parameters(name, parameters),
+                        has_default_handler
+                        )
         self._gobject.add_signal(signal)
     

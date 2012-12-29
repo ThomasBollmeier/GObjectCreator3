@@ -397,7 +397,7 @@ class Interpreter(object):
         for signalNode in ast.getChildrenByName("signal"):
             name = signalNode["name"].getText()
             parameters = self._get_method_parameters(signalNode)
-            visitor.visit_signal(name, parameters)
+            visitor.visit_signal(name, parameters, bool(signalNode["default"]))
                     
     def _eval_arg_type(self, argtype_node):
         

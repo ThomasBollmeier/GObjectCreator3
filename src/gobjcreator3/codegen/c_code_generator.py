@@ -10,11 +10,21 @@ import os
 import re
 import fabscript
 
+class CGenConfig(object):
+    
+    def __init__(self):
+        
+        self.generate_base_functions = False
+        self.generate_constructor = False 
+        self.verbose = False
+        
 class CCodeGenerator(CodeGenerator):
     
-    def __init__(self, root_module, origin, out=StdOut()):
+    def __init__(self, root_module, origin, out=StdOut(), config=CGenConfig()):
         
         CodeGenerator.__init__(self, root_module, origin, out)
+        
+        self._config = config
         
         self._dir_stack = []
         self._cur_dir = ""
@@ -74,7 +84,7 @@ class CCodeGenerator(CodeGenerator):
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(obj)
         lines = self._get_lines_from_template("gobject_header.template", file_path)
                 
-        self._out.visit_text_file(file_path, lines)
+        self._create_text_file(file_path, lines)
         
     def _gen_object_prot_header(self, obj):
         
@@ -84,14 +94,14 @@ class CCodeGenerator(CodeGenerator):
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_prot_header_name(obj)
         lines = self._get_lines_from_template("gobject_header_prot.template", file_path)
         
-        self._out.visit_text_file(file_path, lines)
+        self._create_text_file(file_path, lines)
             
     def _gen_object_source(self, obj):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(obj)
         lines = self._get_lines_from_template("gobject_source.template", file_path)
         
-        self._out.visit_text_file(file_path, lines)
+        self._create_text_file(file_path, lines)
         
     def _gen_object_marshallers(self, obj):
         
@@ -108,27 +118,49 @@ class CCodeGenerator(CodeGenerator):
         
         header_file_path = self._cur_dir + os.sep
         header_file_path += self._name_creator.create_obj_marshaller_header_name(obj)
+
+        if self._config.verbose:
+            print("generating %s..." % header_file_path, end="")
         
         generator.generate_header(header_file_path)
-        
+
+        if self._config.verbose:
+            print("done")
+
         source_file_path = self._cur_dir + os.sep
         source_file_path += self._name_creator.create_obj_marshaller_source_name(obj)
+
+        if self._config.verbose:
+            print("generating %s..." % source_file_path, end="")
         
         generator.generate_source(source_file_path)
+
+        if self._config.verbose:
+            print("done")
         
     def _gen_enum_header(self, enum):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".h"
         lines = self._get_lines_from_template("genum_header.template", file_path)
         
-        self._out.visit_text_file(file_path, lines)
+        self._create_text_file(file_path, lines)
                 
     def _gen_enum_source(self, enum):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".c"
         lines = self._get_lines_from_template("genum_source.template", file_path)
         
+        self._create_text_file(file_path, lines)
+        
+    def _create_text_file(self, file_path, lines):
+        
+        if self._config.verbose:
+            print("generating %s..." % file_path, end="")
+        
         self._out.visit_text_file(file_path, lines)
+        
+        if self._config.verbose:
+            print("done")
                         
     def _get_lines_from_template(self, template_file, file_path):
         
@@ -161,6 +193,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor = fabscript.API()
         self._template_processor.setEditableSectionStyle(self._template_processor.Language.C)
         
+        self._template_processor["config"] = self._config
         self._template_processor["TRUE"] = True
         self._template_processor["FALSE"] = False
         self._template_processor["PUBLIC"] = Visibility.PUBLIC
@@ -210,6 +243,10 @@ class CCodeGenerator(CodeGenerator):
         
         self._template_processor["method_result"] = self._method_result
         self._template_processor["method_signature"] = self._method_signature
+        self._template_processor["method_signature_by_name"] = self._method_signature_by_name
+        self._template_processor["method_by_name"] = self._method_by_name
+        self._template_processor["method_call_args"] = self._method_call_args
+        self._template_processor["method_def_class_cast"] = self._method_def_class_cast
         
         self._template_processor["hasProtectedMembers"] = obj.has_protected_members()
         
@@ -340,6 +377,84 @@ class CCodeGenerator(CodeGenerator):
                 
         return res
     
+    def _method_call_args(self, 
+                          method, 
+                          insert_line_breaks = True, 
+                          indent_level = 1, 
+                          instance_name = "self"
+                          ):
+        
+        args = [p.name for p in method.parameters if p.direction != Parameter.OUT]
+        
+        if not method.is_static:
+            args.insert(0, instance_name)
+            
+        num_args = len(args)
+        if num_args == 0:
+            res = ""
+        elif num_args == 1:
+            res = args[0]
+        else:
+            res = ""
+            for arg in args: 
+                if res:
+                    res += ","
+                if insert_line_breaks:
+                    res += "\n"
+                    res += indent_level * "\t"
+                res += arg
+            if insert_line_breaks:
+                res += "\n"
+                res += indent_level * "\t"
+            
+        return res
+    
+    def _method_signature_by_name(self,
+                                  cls, 
+                                  method_name, 
+                                  suppress_param_names=False,
+                                  insert_line_breaks=True,
+                                  indent_level=1,
+                                  instance_name="self"
+                                  ):
+        
+        minfo = cls.get_method_info(method_name)
+        
+        return self._method_signature(
+                                      minfo.def_origin, 
+                                      minfo.method, 
+                                      suppress_param_names, 
+                                      insert_line_breaks, 
+                                      indent_level, 
+                                      instance_name
+                                      )
+        
+    def _method_by_name(self, cls, method_name):
+        
+        minfo = cls.get_method_info(method_name)
+        
+        return minfo.method
+        
+    def _method_def_class_cast(self, cls, method_name):
+        
+        minfo = cls.get_method_info(method_name)
+        
+        defcls = minfo.def_origin
+        class_name = self._name_creator.replace_camel_case(defcls.name, "_").upper()
+                
+        module_prefix = ""
+        module = defcls.module
+        while module and module.name:
+            if module_prefix:
+                module_prefix = "_" + module_prefix
+            module_prefix = module.name.upper() + module_prefix
+            module = module.module
+            
+        if module_prefix:
+            return module_prefix + "_" + class_name + "_CLASS"
+        else: 
+            return class_name + "_CLASS"
+    
     def _signal_technical_name(self, signal):
         
         return signal.name.replace("-", "_")
@@ -408,4 +523,3 @@ class CCodeGenerator(CodeGenerator):
     def _property_getter_section(self, prop):
         
         return "get_" + prop.name.replace("-", "_").lower()
-                                       

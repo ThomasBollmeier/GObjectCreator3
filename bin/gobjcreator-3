@@ -4,30 +4,46 @@ import os
 import argparse
 from gobjcreator3.compiler import Compiler
 from gobjcreator3.codegen.output import FileOut
-from gobjcreator3.codegen.c_code_generator import CCodeGenerator
-
-def create_generator(model, goc_file, out_dir):
-
-	return CCodeGenerator(model, goc_file, FileOut(out_dir))
+from gobjcreator3.codegen.c_code_generator import CCodeGenerator, CGenConfig
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-	"goc_file", 
-	help="GObjectCreator input file"
-	)
+				"goc_file", 
+				help="GObjectCreator input file"
+				)
 parser.add_argument(
-	"-d", "--dir", 
-	default=os.curdir,
-	help="directory where files will be generated in"
-	) 
+				"--enable-base-functions",
+				action="store_true",
+				dest="enable_base_functions",
+				help="generate base init and base finalize functions"
+				)
+parser.add_argument(
+				"--enable-constructor",
+				action="store_true",
+				dest="enable_constructor",
+				help="generate constructor function"
+				)
+parser.add_argument(
+				"-v", "--verbose",
+				action="store_true",
+				help="verbose generation output"
+				)
+parser.add_argument("-d", "--dir",
+				default=os.curdir,
+				help="directory where files will be generated in"
+				) 
 
 args = parser.parse_args()
 
 # Compile and generate code:
 
 model = Compiler().compile(args.goc_file)
+config = CGenConfig()
+config.generate_base_functions = args.enable_base_functions
+config.generate_constructor = args.enable_constructor
+config.verbose = args.verbose
 
-generator = create_generator(model, args.goc_file, args.dir)
+generator = CCodeGenerator(model, args.goc_file, FileOut(args.dir), config) 
 
 generator.generate()
 

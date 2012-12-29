@@ -78,7 +78,7 @@ class PropValue(object):
             return self.literal
         elif self.number_info:
             if not self.number_info.decimals:
-                return self.number_info.digits
+                return str(self.number_info.digits)
             else:
                 return "%d.%d" % (self.number_info.digits, self.number_info.decimals)
         elif self.code_info:

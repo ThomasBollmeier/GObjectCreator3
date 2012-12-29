@@ -44,9 +44,12 @@ class CompilerTest(unittest.TestCase):
             prop_info = "Property: %s" % p.name
             prop_info += ", Type: %s" % p.type
             prop_info += ", GType: %s" % p.gtype
-            prop_info += ", Min: %s" % p.min
-            prop_info += ", Max: %s" % p.max
-            prop_info += ", Default: %s" % p.default 
+            if p.min is not None:
+                prop_info += ", Min: %s" % p.min
+            if p.max is not None:
+                prop_info += ", Max: %s" % p.max
+            if p.default is not None:
+                prop_info += ", Default: %s" % p.default 
             print(prop_info)
         for s in worker.get_signals():
             print("Signal: %s" % s.name)

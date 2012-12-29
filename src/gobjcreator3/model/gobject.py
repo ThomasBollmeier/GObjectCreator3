@@ -66,7 +66,7 @@ class GObject(ClsIntf):
         if info.method.is_final:
             raise Exception("Final method '%s' cannot be overridden!" % method_name)
         
-        self.overridden.append(info.method)
+        self.overridden.append(method_name)
         
     def add_attribute(self, attr):
 

@@ -182,10 +182,11 @@ class TestVisitor(AstVisitor):
         
         self._write("Property: %s %s" % (name, attributes))
         
-    def visit_signal(self, name, parameters):
+    def visit_signal(self, name, parameters, has_default_handler):
         
         self._write("Signal: %s" % name)
         self._indent()
+        self._write("Default handler: %s" % has_default_handler)
         if parameters:
             self._write("Parameters:")
             self._indent()    

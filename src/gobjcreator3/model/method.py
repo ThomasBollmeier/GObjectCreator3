@@ -42,6 +42,14 @@ class Method(object):
         
         self.is_final = is_final
         
+    def returns_result(self):
+        
+        for param in self.parameters:
+            if param.direction == Parameter.OUT:
+                return True
+        
+        return False
+        
 class ConstructorMethod(Method):
     
     def __init__(self):

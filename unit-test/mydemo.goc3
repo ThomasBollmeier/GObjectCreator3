@@ -116,8 +116,7 @@ module demo
 			full-name 
 			{
 				access = read,
-				description = 'worker\'s name',
-				auto-create
+				description = 'worker\'s name'
 			}
 			
 			team 
@@ -133,7 +132,7 @@ module demo
 				type = enumeration,
 				gtype = gtypeof(WorkerStatus),
 				default = WorkerStatus.FREE,
-				min = "Hallo Welt",
+				min = 0,
 				max = 42
 			}
 			

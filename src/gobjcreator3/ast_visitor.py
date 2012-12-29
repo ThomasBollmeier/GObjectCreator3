@@ -84,6 +84,7 @@ class AstVisitor(object):
     
     def visit_signal(self,
                      name,
-                     parameters
+                     parameters,
+                     has_default_handler
                      ):
         pass
