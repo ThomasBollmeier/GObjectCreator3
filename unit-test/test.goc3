@@ -1,3 +1,9 @@
+module geo {
+
+	gobject Location {}
+
+}
+
 module base {
 
 	genum AnimalCatg { UNDEFINED=99, FISH=100, BIRD, MAMMAL }
@@ -30,6 +36,13 @@ module base {
 			category: AnimalCatg;
 			
 		}
+	
+	}
+	
+	ginterface Movable {
+	
+		goto
+			<- location: geo/Location; 
 	
 	}
 

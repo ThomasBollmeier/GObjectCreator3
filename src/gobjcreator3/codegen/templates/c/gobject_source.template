@@ -147,7 +147,7 @@ ${class_prefix}_on_${signal_tech_name(signal)} (${method_signature(class, signal
 
 :> endif
 
-:> for each method in class.methods where not method.is_final and not method.is_abstract do
+:> for each method in class.methods where not ( method.is_final or method.is_abstract ) do
 
 	:> if [ isFirst ] then begin
 /* default implementations for non-final methods */
@@ -675,7 +675,7 @@ ${class_prefix}_dispose (GObject* obj)
 	:> endedit
 	
 	/* chain up to super class: */
-	G_OBJECT_CLASS (${class_prefix}_parent_class)->dispose (obj);
+	${class_prefix}_parent_class->dispose (obj);
 
 }
 
@@ -687,7 +687,7 @@ ${class_prefix}_finalize (GObject* obj)
 	:> endedit
 
 	/* chain up to super class: */
-	G_OBJECT_CLASS (${class_prefix}_parent_class)->finalize (obj);
+	${class_prefix}_parent_class->finalize (obj);
 
 }
 

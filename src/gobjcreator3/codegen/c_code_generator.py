@@ -63,6 +63,12 @@ class CCodeGenerator(CodeGenerator):
             self._gen_object_source(obj)
             if obj.has_signals():
                 self._gen_object_marshallers(obj)
+
+        intfs = [intf for intf in module.interfaces if intf.filepath_origin == self._origin]
+        
+        for intf in intfs:
+            self._setup_ginterface_symbols(intf)
+            self._gen_interface_header(intf)
             
         enums = [enum for enum in module.enumerations if enum.filepath_origin == self._origin]
         
@@ -101,6 +107,13 @@ class CCodeGenerator(CodeGenerator):
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(obj)
         lines = self._get_lines_from_template("gobject_source.template", file_path)
         
+        self._create_text_file(file_path, lines)
+        
+    def _gen_interface_header(self, intf):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(intf)
+        lines = self._get_lines_from_template("ginterface_header.template", file_path)
+                
         self._create_text_file(file_path, lines)
         
     def _gen_object_marshallers(self, obj):
@@ -208,6 +221,13 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["length"] = self._length
         self._template_processor["to_upper"] = self._to_upper
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
+
+        self._template_processor["method_result"] = self._method_result
+        self._template_processor["method_signature"] = self._method_signature
+        self._template_processor["method_signature_by_name"] = self._method_signature_by_name
+        self._template_processor["method_by_name"] = self._method_by_name
+        self._template_processor["method_call_args"] = self._method_call_args
+        self._template_processor["method_def_class_cast"] = self._method_def_class_cast
         
     def _setup_module_symbols(self, module):
         
@@ -240,14 +260,7 @@ class CCodeGenerator(CodeGenerator):
         
         self._template_processor["protected_header"] = self._name_creator.create_obj_prot_header_name
         self._template_processor["marshaller_header"] = self._name_creator.create_obj_marshaller_header_name
-        
-        self._template_processor["method_result"] = self._method_result
-        self._template_processor["method_signature"] = self._method_signature
-        self._template_processor["method_signature_by_name"] = self._method_signature_by_name
-        self._template_processor["method_by_name"] = self._method_by_name
-        self._template_processor["method_call_args"] = self._method_call_args
-        self._template_processor["method_def_class_cast"] = self._method_def_class_cast
-        
+
         self._template_processor["hasProtectedMembers"] = obj.has_protected_members()
         
         self._template_processor["PROP_NAME"] = self._name_creator.create_property_enum_value
@@ -267,6 +280,17 @@ class CCodeGenerator(CodeGenerator):
             self._template_processor["marshaller_func"] = self._marshaller_names.create_marshaller_name
         else:
             self._marshaller_names = None
+            
+    def _setup_ginterface_symbols(self, intf):
+        
+        self._template_processor["intf"] = intf
+        self._template_processor["INTF_NAME"] = self._name_creator.replace_camel_case(intf.name, "_").upper()
+        
+        prefix = intf.cfunc_prefix or self._name_creator.replace_camel_case(intf.name, "_").lower()
+        module_prefix = self._template_processor.getSymbol("module_prefix")
+        if module_prefix:
+            prefix = module_prefix + "_" + prefix
+        self._template_processor["intf_prefix"] = prefix
         
     def _setup_genum_symbols(self, enum):
         
