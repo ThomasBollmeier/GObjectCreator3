@@ -1,3 +1,7 @@
+:> include "structures.template"
+:> include "properties.template"
+:> include "signals.template"
+:> include "methods.template"
 :> if [ class.has_protected_members() or not class.is_final ] then begin
 #include "${protected_header(class)}"
 :> else
@@ -23,48 +27,35 @@
 :> define hasPrivClassAttrs = FALSE
 :> define hasProtAttrs = FALSE
 :> define hasProtClassAttrs = FALSE
+
 :> for each a in class.get_attributes() do
 	:> case a.visibility in
-	:> PROTECTED)
-		:> if [ not a.is_static ] then begin
-			:> hasProtAttrs = TRUE
-		:> else
-			:> hasProtClassAttrs = TRUE
-		:> endif
 	:> PRIVATE)
 		:> if [ not a.is_static ] then begin
 			:> hasPrivAttrs = TRUE
 		:> else
 			:> hasPrivClassAttrs = TRUE
 		:> endif
+	:> PROTECTED)
+		:> if [ not a.is_static ] then begin
+			:> hasProtAttrs = TRUE
+		:> else
+			:> hasProtClassAttrs = TRUE
+		:> endif
 	:> endcase
 :> done
 
 :> if [ hasPrivAttrs ] then begin
-struct _${FullClassName}Private  
-{
-:> for each attr in class.get_attributes() where \
-	attr.visibility == PRIVATE and \
-	attr.is_static == FALSE \
-	do
-	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
-:> done
-};
+
+	:> paste snippet structure_def (FullClassName, class.get_attributes(), FALSE, PRIVATE)
 
 # define ${CAST_MACRO(class)}_GET_PRIVATE(obj) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((obj), ${TYPE_MACRO(class)}, ${FullClassName}Private))
+
 :> endif
 
 :> if [ hasPrivClassAttrs ] then begin
-struct _${FullClassName}ClsPrivate 
-{
-:> for each attr in class.get_attributes() where \
-	attr.visibility == PRIVATE and \
-	attr.is_static == TRUE \
-	do
-	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
-:> done
-}
+	:> paste snippet structure_def (FullClassName, class.get_attributes(), TRUE, PRIVATE)
 :> endif
 
 /* 
@@ -75,76 +66,11 @@ static ${FullClassName}Class *${class_prefix}_class = NULL;
 static GObjectClass *${class_prefix}_parent_class = NULL; 
 
 :> if [ not is_empty(class.get_properties()) ] then begin
-
-enum 
-{
-	PROP_0,
-	:> for each prop in class.get_properties() do
-	${PROP_NAME(prop)},
-	:> done
-	NUM_PROPERTIES
-};
-
-static GParamSpec *${class_prefix}_properties[NUM_PROPERTIES] = {NULL, };
-
+	:> paste snippet prop_setter_getter_decl (class_prefix, class.get_properties())
 :> endif
 
 :> if [ class.has_signals() ] then begin
-
-enum
-{
-	:> for each signal in class.get_signals() do
-	SIGNAL_${to_upper(signal_tech_name(signal))},
-	:> done
-	NUM_SIGNALS
-};
-
-static guint ${class_prefix}_signals[NUM_SIGNALS];
-
-static guint
-${class_prefix}_register_signal (
-	const gchar *signal_name,
-	GClosure *default_closure,
-	GSignalCMarshaller marshaller,
-	GType return_type,
-	guint num_params,
-	...
-	)
-{
-	va_list args;
-	
-	va_start (args, num_params);
-		
-	return g_signal_new_valist (
-		signal_name,
-		${TYPE_MACRO(class)},
-		G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,
-		default_closure,
-		NULL, /* accumulator */
-		NULL, /* accumulator data */
-		marshaller,
-		return_type,
-		num_params,
-		args
-		);
-		
-	va_end (args);
-
-} 
-
-	:> for each signal in class.get_signals() where signal.has_default_handler == TRUE do
-
-static void 
-${class_prefix}_on_${signal_tech_name(signal)} (${method_signature(class, signal, FALSE, TRUE, 1, "sender")})
-{
-	:> define section_name = signal_section_defhandler(signal)
-	:> edit-section section_name begin 
-	// insert implementation of default signal handler for signal "${signal.name}"
-	:> endedit 
-}
-
-	:> done
-
+	:> paste snippet signal_def_and_handlers (class_prefix, class, class.get_signals())
 :> endif
 
 :> for each method in class.methods where not ( method.is_final or method.is_abstract ) do
@@ -190,9 +116,9 @@ static void
 ${class_prefix}_base_init (gpointer klass)
 {
 
-:> edit-section 'base-init' begin
-/* Add custom base initialization code ... */
-:> endedit
+	:> edit-section 'base-init' begin
+	/* Add custom base initialization code ... */
+	:> endedit
 
 }
 
@@ -200,9 +126,9 @@ static void
 ${class_prefix}_base_finalize (gpointer klass)
 {
 
-:> edit-section 'base-finalize' begin
-/* Add custom base finalization code ... */
-:> endedit
+	:> edit-section 'base-finalize' begin
+	/* Add custom base finalization code ... */
+	:> endedit
 
 }
 
@@ -224,26 +150,6 @@ ${class_prefix}_dispose (GObject* obj);
 
 static void
 ${class_prefix}_finalize (GObject* obj);
-	
-:> if [ not is_empty(class.get_properties()) ] then begin
-
-static void
-${class_prefix}_set_property (
-	GObject      *object,
-	guint        property_id,
-	const GValue *value,
-	GParamSpec   *pspec
-	);
-	
-static void
-${class_prefix}_get_property (
-	GObject    *object,
-	guint      property_id,
-	GValue     *value,
-	GParamSpec *pspec
-	);
-
-:> endif
 
 static void                
 ${class_prefix}_class_init (
@@ -265,6 +171,13 @@ ${class_prefix}_class_init (
 :> endif
 	${class_prefix}_parent_class = g_type_class_peek_parent (${class_prefix}_class);
 	gobj_class = G_OBJECT_CLASS (${class_prefix}_class);
+	
+:> if [ hasProtClassAttrs ] then begin
+	${class_prefix}_class->prot = g_new (${FullClassName}ClsProtected, 1);
+:> endif	
+:> if [ hasPrivClassAttrs ] then begin
+	${class_prefix}_class->priv = g_new (${FullClassName}ClsPrivate, 1);
+:> endif	
 	
 :> if [ config.generate_constructor ] then begin
 	gobj_class->constructor = ${class_prefix}_constructor;
@@ -296,209 +209,16 @@ ${class_prefix}_class_init (
 :> endif
 
 :> if [ not is_empty(class.get_properties()) ] then begin
-
-	/* setter and getter for properties: */
-	gobj_class->set_property = ${class_prefix}_set_property;
-	gobj_class->get_property = ${class_prefix}_get_property;
-	
-	:> for each prop in class.get_properties() do
-	
-		:> case prop.type in
-			:> PropType.BOOLEAN)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_boolean (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		FALSE,
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
-		);
-			:> PropType.BYTE)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_uchar (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.min) ] then begin
-		${prop_value(prop.min)},
-		:> else
-		0,
-		:> endif	
-		:> if [ not is_empty(prop.max) ] then begin
-		${prop_value(prop.max)},
-		:> else
-		255,
-		:> endif	
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		0,
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
-		);
-			:> PropType.INTEGER)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_int (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.min) ] then begin
-		${prop_value(prop.min)},
-		:> else
-		G_MININT,
-		:> endif	
-		:> if [ not is_empty(prop.max) ] then begin
-		${prop_value(prop.max)},
-		:> else
-		G_MAXINT,
-		:> endif	
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		0,
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
-		);
-			:> PropType.FLOAT)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_float (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.min) ] then begin
-		${prop_value(prop.min)},
-		:> else
-		G_MINFLOAT,
-		:> endif	
-		:> if [ not is_empty(prop.max) ] then begin
-		${prop_value(prop.max)},
-		:> else
-		G_MAXFLOAT,
-		:> endif	
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		0,
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
-		);
-			:> PropType.DOUBLE)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_double (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.min) ] then begin
-		${prop_value(prop.min)},
-		:> else
-		G_MINDOUBLE,
-		:> endif	
-		:> if [ not is_empty(prop.max) ] then begin
-		${prop_value(prop.max)},
-		:> else
-		G_MAXDOUBLE,
-		:> endif	
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		0,
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
-		);
-			:> PropType.STRING)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_string (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		:> if [ not is_empty(prop.default) ] then begin
-		${prop_value(prop.default)},
-		:> else
-		"",
-		:> endif
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
-		);
-			:> PropType.POINTER)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_pointer (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
-		);
-			:> PropType.OBJECT)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_object (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		${prop_gtype(prop.gtype)},
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
-		);
-			:> PropType.ENUMERATION)
-	${class_prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_enum (
-		"${prop.name}",
-		"${prop.name}",
-		"${literal_trim(prop.description)}",
-		${prop_gtype(prop.gtype)},
-		${prop_value(prop.default)},
-		${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
-		);			
-		:> endcase
-	
-	:> done
-	
-	g_object_class_install_properties (gobj_class,
-		NUM_PROPERTIES,
-		${class_prefix}_properties
-		);
-
+	:> paste snippet prop_class_init(class_prefix, class.get_properties()) indent by 1
 :> endif
 
 :> if [ class.has_signals() ] then begin
-
-	:> for each signal in class.get_signals() do
-	
-		:> define input_params = signal.get_input_params()
-		:> define num_input_params = length(input_params)
-	
-		:> if [ isFirst ] then begin
-	/* signals */
-		
-		:> endif
-		
-		:> if [ signal.has_default_handler ] then begin
-	default_closure = g_cclosure_new (
-		G_CALLBACK (${class_prefix}_on_${signal_tech_name(signal)}), 
-		NULL, 
-		NULL
-		);
-		:> else
-	default_closure = NULL;
-		:> endif
-	
-	${class_prefix}_signals[SIGNAL_${to_upper(signal_tech_name(signal))}] = ${class_prefix}_register_signal (
-		"${signal.name}",
-		default_closure,
-		(GSignalCMarshaller) ${marshaller_func(signal)},
-		G_TYPE_NONE, /* return type */
-		:> if [ num_input_params > 0 ] then begin
-		${num_input_params},
-			:> for each input_param in input_params do
-				:> if [ not isLast ] then begin
-		${TYPE_MACRO(input_param.type)},
-				:> else
-		${TYPE_MACRO(input_param.type)}
-				:> endif
-			:> done
-		:> else
-		${num_input_params}
-		:> endif
-		);
-	
-	:> done
-
+	:> paste snippet signal_registration (class_prefix, class.get_signals()) indent by 1
 :> endif
 
-:> edit-section 'class-init' begin
-/* Add custom class initialization code ... */
-:> endedit
+	:> edit-section 'class-init' begin
+	/* Add custom class initialization code ... */
+	:> endedit
 
 }
 
@@ -510,13 +230,16 @@ ${class_prefix}_instance_init (
 
 	${FullClassName} *self = ${CAST_MACRO(class)} (instance);
 
+:> if [ hasProtAttrs ] then begin
+	self->prot = g_new (${FullClassName}Protected, 1);
+:> endif
 :> if [ hasPrivAttrs ] then begin
 	self->priv = ${CAST_MACRO(class)}_GET_PRIVATE (self);
 :> endif
 
-:> edit-section 'instance-init' begin
-/* Add custom instance initialization code ... */
-:> endedit
+	:> edit-section 'instance-init' begin
+	/* Add custom instance initialization code ... */
+	:> endedit
 
 }
 
@@ -536,9 +259,9 @@ ${class_prefix}_constructor (
 		num_properties,
 		properties);
 
-:> edit-section 'constructor' begin
-/* Add custom constructor code ... */
-:> endedit
+	:> edit-section 'constructor' begin
+	/* Add custom constructor code ... */
+	:> endedit
 
 	return new_obj;
 
@@ -685,6 +408,10 @@ ${class_prefix}_finalize (GObject* obj)
 	:> edit-section 'finalize' begin
 	/* Free allocated memory here ... */
 	:> endedit
+	
+:> if [ hasProtAttrs ] then begin
+	g_free (${CAST_MACRO(class)} (obj)->prot);
+:> endif 
 
 	/* chain up to super class: */
 	${class_prefix}_parent_class->finalize (obj);
@@ -692,129 +419,13 @@ ${class_prefix}_finalize (GObject* obj)
 }
 
 :> if [ not is_empty(class.get_properties()) ] then begin
-
-static void
-${class_prefix}_set_property (
-	GObject      *object,
-	guint        property_id,
-	const GValue *value,
-	GParamSpec   *pspec
-	)
-{
-
-:> define hasSetters = FALSE
-:> for each prop in class.get_properties() where prop.is_writable() do
-
-	:> if [isFirst] then begin
-	:> edit-section 'set_property' begin
-	/* your variable declarations...*/
-	:> endedit
-	
-		:> hasSetters = TRUE
-	switch (property_id) 
-	{
-	:> endif
-	case ${PROP_NAME(prop)}:
-		:> define section_name = prop_setter_section(prop) 
-		:> edit-section section_name begin
-		g_warning("Class '%s': Setter for property '%s' is not implemented", "${FullClassName}", "${prop.name}");  
-		:> endedit
-		break;
-	:> if [isLast] then begin
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-		break;
-	}
-	:> endif
-
-:> done
-
-:> if [ not hasSetters ] then begin
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	:> paste snippet prop_setter_getter_impl(class_prefix, class.get_properties(), 'Class', FullClassName)
 :> endif
 
-}
-	
-static void
-${class_prefix}_get_property (
-	GObject    *object,
-	guint      property_id,
-	GValue     *value,
-	GParamSpec *pspec
-	)
-{
+:> if [ not is_empty(class.methods) ] then begin
 
-:> define hasGetters = FALSE
-:> for each prop in class.get_properties() where prop.is_readable() do
-
-	:> if [isFirst] then begin
-	:> edit-section 'get_property' begin
-	/* your variable declarations...*/
-	:> endedit
-	
-		:> hasGetters = TRUE
-	switch (property_id) 
-	{
-	:> endif
-	case ${PROP_NAME(prop)}:
-		:> define section_name = prop_getter_section(prop) 
-		:> edit-section section_name begin
-		g_warning("Class '%s': Getter for property '%s' is not implemented", "${FullClassName}", "${prop.name}");
-		:> endedit
-		break;
-	:> if [isLast] then begin
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-		break;
-	}
-	:> endif
-:> done
-
-:> if [ not hasGetters ] then begin
-	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-:> endif
-
-}
-
-:> endif
-
-:> for each method in class.methods do
-	:> if [ isFirst ] then begin
 /* == implementation of methods == */
 
-	:> endif
-	:> if [ method.visibility == PRIVATE ] then begin
-static ${method_result(method)}
-	:> else
-${method_result(method)}
-	:> endif	
-${class_prefix}_${method.name} (${method_signature(class, method, FALSE, TRUE, 1)})
-{
-	
-	:> if [ method.is_final ] then begin
-	
-	:> edit-section method.name begin
-	/* add your method implementation here...*/
-	:> endedit
-	
-	:> else
-	
-		:> if [ not is_empty(class.module) ] then begin
-	${FullClassName}Class *klass = ${MODULE_PREFIX}_${CLASS_NAME}_GET_CLASS (self);
-		:> else
-	${FullClassName}Class *klass = ${CLASS_NAME}_GET_CLASS (self);
-		:> endif
-	
-	g_assert (klass->${method.name} != NULL);
-	
-		:> if [ not method.returns_result() ] then begin
-	klass->${method.name} (${method_call_args(method, TRUE, 2)});
-		:> else
-	return klass->${method.name} (${method_call_args(method, TRUE, 2)});
-		:> endif
-	
-	:> endif
-	
-}
-	
-:> done
+	:> paste snippet method_impls (class, class_prefix)
+
+:> endif

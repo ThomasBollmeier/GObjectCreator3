@@ -1,0 +1,41 @@
+:> snippet method_impl(clif, prefix, method)
+
+	:> if [ method.visibility == PRIVATE ] then begin
+static ${method_result(method)}
+	:> else
+${method_result(method)}
+	:> endif	
+${prefix}_${method.name} (${method_signature(clif, method, FALSE, TRUE, 1)})
+{
+	
+	:> if [ method.is_final ] then begin
+	
+	:> edit-section method.name begin
+	/* add your method implementation here...*/
+	:> endedit
+	
+	:> else
+	
+	${type_name(clif)}Class *klass = ${CAST_MACRO(clif)}_GET_CLASS (self);
+	
+	g_assert (klass->${method.name} != NULL);
+	
+		:> if [ not method.returns_result() ] then begin
+	klass->${method.name} (${method_call_args(method, TRUE, 2)});
+		:> else
+	return klass->${method.name} (${method_call_args(method, TRUE, 2)});
+		:> endif
+	
+	:> endif
+	
+}
+
+:> endsnippet
+
+:> snippet method_impls (clif, prefix)
+
+:> for each method in clif.methods do
+	:> paste snippet method_impl(clif, prefix, method)	
+:> done
+
+:> endsnippet

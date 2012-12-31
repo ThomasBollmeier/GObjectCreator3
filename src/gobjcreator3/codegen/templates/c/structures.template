@@ -1,0 +1,26 @@
+:> snippet structure_def (FullClassName, attributes, is_static, visibility)
+
+:> case visibility in
+	:> PROTECTED)
+		:> if [ not is_static ] then begin
+struct _${FullClassName}Protected 
+		:> else
+struct _${FullClassName}ClsProtected
+		:> endif
+	:> PRIVATE)
+		:> if [ not is_static ] then begin
+struct _${FullClassName}Private 
+		:> else
+struct _${FullClassName}ClsPrivate
+		:> endif
+:> endcase
+{
+:> for each attr in attributes where \
+	attr.visibility == visibility and \
+	attr.is_static == is_static \
+	do
+	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
+:> done
+};
+
+:> endsnippet

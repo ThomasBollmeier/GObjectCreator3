@@ -30,9 +30,11 @@ class CCodeGenerator(CodeGenerator):
         self._cur_dir = ""
         
         self._name_creator = NameCreator()
+        
+        self._template_dir = os.path.dirname(__file__) + os.sep + "templates" + os.sep + "c"
         self._refresh_template_processor()
         
-        self._regex_type_w_ptrs = re.compile(r"(\w+)(\s*)(\*+)") 
+        self._regex_type_w_ptrs = re.compile(r"(\w+)(\s*)(\*+)")
                 
     def generate(self):
         
@@ -179,8 +181,7 @@ class CCodeGenerator(CodeGenerator):
         
         self._out.prepare_file_creation(file_path, self._template_processor)
         
-        template_path = os.path.dirname(__file__) + os.sep + "templates" + os.sep + "c"
-        template_path += os.sep + template_file
+        template_path = self._template_dir + os.sep + template_file
         template_path = os.path.abspath(template_path)
         
         out_buffer = self._template_processor.createStringOut()
@@ -205,7 +206,8 @@ class CCodeGenerator(CodeGenerator):
         
         self._template_processor = fabscript.API()
         self._template_processor.setEditableSectionStyle(self._template_processor.Language.C)
-        
+        self._template_processor.setIncludePath([self._template_dir])
+                
         self._template_processor["config"] = self._config
         self._template_processor["TRUE"] = True
         self._template_processor["FALSE"] = False
@@ -227,6 +229,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["method_signature_by_name"] = self._method_signature_by_name
         self._template_processor["method_by_name"] = self._method_by_name
         self._template_processor["method_call_args"] = self._method_call_args
+        self._template_processor["method_def_class"] = self._method_def_class
         self._template_processor["method_def_class_cast"] = self._method_def_class_cast
         
     def _setup_module_symbols(self, module):
@@ -458,6 +461,12 @@ class CCodeGenerator(CodeGenerator):
         minfo = cls.get_method_info(method_name)
         
         return minfo.method
+    
+    def _method_def_class(self, cls, method_name):
+
+        minfo = cls.get_method_info(method_name)
+        
+        return minfo.def_origin
         
     def _method_def_class_cast(self, cls, method_name):
         

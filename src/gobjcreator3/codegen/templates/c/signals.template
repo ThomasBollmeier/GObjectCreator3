@@ -1,0 +1,102 @@
+:> snippet signal_def_and_handlers (prefix, type, signals)
+
+enum
+{
+	:> for each signal in signals do
+	SIGNAL_${to_upper(signal_tech_name(signal))},
+	:> done
+	NUM_SIGNALS
+};
+
+static guint ${prefix}_signals[NUM_SIGNALS];
+
+static guint
+${prefix}_register_signal (
+	const gchar *signal_name,
+	GClosure *default_closure,
+	GSignalCMarshaller marshaller,
+	GType return_type,
+	guint num_params,
+	...
+	)
+{
+	va_list args;
+	
+	va_start (args, num_params);
+		
+	return g_signal_new_valist (
+		signal_name,
+		${TYPE_MACRO(type)},
+		G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,
+		default_closure,
+		NULL, /* accumulator */
+		NULL, /* accumulator data */
+		marshaller,
+		return_type,
+		num_params,
+		args
+		);
+		
+	va_end (args);
+
+} 
+
+:> for each signal in signals where signal.has_default_handler == TRUE do
+
+static void 
+${prefix}_on_${signal_tech_name(signal)} (${method_signature(type, signal, FALSE, TRUE, 1, "sender")})
+{
+	:> define section_name = signal_section_defhandler(signal)
+	:> edit-section section_name begin 
+	/* insert implementation of default signal handler for signal "${signal.name}" */
+	:> endedit 
+}
+
+:> done
+
+:> endsnippet
+
+:> snippet signal_registration (prefix, signals)
+
+:> for each signal in signals do
+
+	:> define input_params = signal.get_input_params()
+	:> define num_input_params = length(input_params)
+
+	:> if [ isFirst ] then begin
+/* signals */
+	
+	:> endif
+	
+	:> if [ signal.has_default_handler ] then begin
+default_closure = g_cclosure_new (
+	G_CALLBACK (${prefix}_on_${signal_tech_name(signal)}), 
+	NULL, 
+	NULL
+	);
+	:> else
+default_closure = NULL;
+	:> endif
+
+${prefix}_signals[SIGNAL_${to_upper(signal_tech_name(signal))}] = ${prefix}_register_signal (
+	"${signal.name}",
+	default_closure,
+	(GSignalCMarshaller) ${marshaller_func(signal)},
+	G_TYPE_NONE, /* return type */
+	:> if [ num_input_params > 0 ] then begin
+	${num_input_params},
+		:> for each input_param in input_params do
+			:> if [ not isLast ] then begin
+	${TYPE_MACRO(input_param.type)},
+			:> else
+	${TYPE_MACRO(input_param.type)}
+			:> endif
+		:> done
+	:> else
+	${num_input_params}
+	:> endif
+	);
+
+:> done
+
+:> endsnippet

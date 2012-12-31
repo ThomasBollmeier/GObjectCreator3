@@ -1,0 +1,273 @@
+:> snippet prop_setter_getter_decl (prefix, properties)
+
+enum 
+{
+	PROP_0,
+	:> for each prop in properties do
+	${PROP_NAME(prop)},
+	:> done
+	NUM_PROPERTIES
+};
+
+static GParamSpec *${prefix}_properties[NUM_PROPERTIES] = {NULL, };
+
+static void
+${prefix}_set_property (
+	GObject      *object,
+	guint        property_id,
+	const GValue *value,
+	GParamSpec   *pspec
+	);
+	
+static void
+${prefix}_get_property (
+	GObject    *object,
+	guint      property_id,
+	GValue     *value,
+	GParamSpec *pspec
+	);
+	
+:> endsnippet
+
+:> snippet prop_setter_getter_impl (prefix, properties, TypeCatgName, FullTypeName)
+
+static void
+${prefix}_set_property (
+	GObject      *object,
+	guint        property_id,
+	const GValue *value,
+	GParamSpec   *pspec
+	)
+{
+
+:> define hasSetters = FALSE
+:> for each prop in properties where prop.is_writable() do
+
+	:> if [isFirst] then begin
+	:> edit-section 'set_property' begin
+	/* your variable declarations...*/
+	:> endedit
+	
+		:> hasSetters = TRUE
+	switch (property_id) 
+	{
+	:> endif
+	case ${PROP_NAME(prop)}:
+		:> define section_name = prop_setter_section(prop) 
+		:> edit-section section_name begin
+		g_warning("${TypeCatgName} '%s': Setter for property '%s' is not implemented", "${FullTypeName}", "${prop.name}");  
+		:> endedit
+		break;
+	:> if [isLast] then begin
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
+	:> endif
+
+:> done
+
+:> if [ not hasSetters ] then begin
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+:> endif
+
+}
+	
+static void
+${prefix}_get_property (
+	GObject    *object,
+	guint      property_id,
+	GValue     *value,
+	GParamSpec *pspec
+	)
+{
+
+:> define hasGetters = FALSE
+:> for each prop in properties where prop.is_readable() do
+
+	:> if [isFirst] then begin
+	:> edit-section 'get_property' begin
+	/* your variable declarations...*/
+	:> endedit
+	
+		:> hasGetters = TRUE
+	switch (property_id) 
+	{
+	:> endif
+	case ${PROP_NAME(prop)}:
+		:> define section_name = prop_getter_section(prop) 
+		:> edit-section section_name begin
+		g_warning("${TypeCatgName} '%s': Getter for property '%s' is not implemented", "${FullTypeName}", "${prop.name}");
+		:> endedit
+		break;
+	:> if [isLast] then begin
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+		break;
+	}
+	:> endif
+:> done
+
+:> if [ not hasGetters ] then begin
+	G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+:> endif
+
+}
+
+:> endsnippet
+
+:> snippet prop_class_init (prefix, properties)
+
+/* setter and getter for properties: */
+gobj_class->set_property = ${prefix}_set_property;
+gobj_class->get_property = ${prefix}_get_property;
+
+:> for each prop in properties do
+
+	:> case prop.type in
+		:> PropType.BOOLEAN)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_boolean (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	FALSE,
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+	);
+		:> PropType.BYTE)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_uchar (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.min) ] then begin
+	${prop_value(prop.min)},
+	:> else
+	0,
+	:> endif	
+	:> if [ not is_empty(prop.max) ] then begin
+	${prop_value(prop.max)},
+	:> else
+	255,
+	:> endif	
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	0,
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+	);
+		:> PropType.INTEGER)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_int (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.min) ] then begin
+	${prop_value(prop.min)},
+	:> else
+	G_MININT,
+	:> endif	
+	:> if [ not is_empty(prop.max) ] then begin
+	${prop_value(prop.max)},
+	:> else
+	G_MAXINT,
+	:> endif	
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	0,
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+	);
+		:> PropType.FLOAT)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_float (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.min) ] then begin
+	${prop_value(prop.min)},
+	:> else
+	G_MINFLOAT,
+	:> endif	
+	:> if [ not is_empty(prop.max) ] then begin
+	${prop_value(prop.max)},
+	:> else
+	G_MAXFLOAT,
+	:> endif	
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	0,
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+	);
+		:> PropType.DOUBLE)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_double (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.min) ] then begin
+	${prop_value(prop.min)},
+	:> else
+	G_MINDOUBLE,
+	:> endif	
+	:> if [ not is_empty(prop.max) ] then begin
+	${prop_value(prop.max)},
+	:> else
+	G_MAXDOUBLE,
+	:> endif	
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	0,
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS	
+	);
+		:> PropType.STRING)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_string (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	:> if [ not is_empty(prop.default) ] then begin
+	${prop_value(prop.default)},
+	:> else
+	"",
+	:> endif
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+	);
+		:> PropType.POINTER)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_pointer (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+	);
+		:> PropType.OBJECT)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_object (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	${prop_gtype(prop.gtype)},
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+	);
+		:> PropType.ENUMERATION)
+${prefix}_properties[${PROP_NAME(prop)}] = g_param_spec_enum (
+	"${prop.name}",
+	"${prop.name}",
+	"${literal_trim(prop.description)}",
+	${prop_gtype(prop.gtype)},
+	${prop_value(prop.default)},
+	${prop_flags(prop)}|G_PARAM_STATIC_STRINGS
+	);			
+	:> endcase
+
+:> done
+
+g_object_class_install_properties (gobj_class,
+	NUM_PROPERTIES,
+	${prefix}_properties
+	);
+
+:> endsnippet

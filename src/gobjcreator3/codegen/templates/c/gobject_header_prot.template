@@ -1,3 +1,4 @@
+:> include "structures.template"
 /*
  * ...Copyright/Licensing information...
  */
@@ -35,27 +36,11 @@ G_BEGIN_DECLS
 :> done
 
 :> if [ hasProtAttrs ] then begin
-struct _${FullClassName}Protected  
-{
-:> for each attr in class.get_attributes() where \
-	attr.visibility == PROTECTED and \
-	attr.is_static == FALSE \
-	do
-	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
-:> done
-};
+	:> paste snippet structure_def (FullClassName, class.get_attributes(), FALSE, PROTECTED)
 :> endif
 
 :> if [ hasProtClassAttrs ] then begin
-struct _${FullClassName}ClsProtected 
-{
-:> for each attr in class.get_attributes() where \
-	attr.visibility == PROTECTED and \
-	attr.is_static == TRUE \
-	do
-	${rearrange_asterisk(type_name(attr.type, TRUE), attr.name)};
-:> done
-}
+	:> paste snippet structure_def (FullClassName, class.get_attributes(), TRUE, PROTECTED)
 :> endif
 
 :> define supress_param_names = FALSE
