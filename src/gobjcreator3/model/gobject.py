@@ -50,11 +50,8 @@ class GObject(ClsIntf):
                 meth = cls._methods_d[method_name]
                 if cls == self or meth.visibility != Visibility.PRIVATE:
                     return MethodInfo(meth, cls)
-            for intf in cls.interfaces:
-                if method_name in intf._methods_d:
-                    return MethodInfo(intf._methods_d[method_name], intf)
             cls = cls.super_class
-            
+
         return None
     
     def override(self, method_name):

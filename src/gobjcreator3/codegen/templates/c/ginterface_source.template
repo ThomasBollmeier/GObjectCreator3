@@ -1,0 +1,26 @@
+:> include "methods.template"
+/*
+ * ...Copyright/Licensing information...
+ */
+
+#include "${filename_wo_suffix(intf)}.h"
+:> edit-section 'source_top' begin
+/* further includes... */
+:> endedit
+
+G_DEFINE_INTERFACE (${type_name(intf)}, ${intf_prefix}, 0)
+
+static void
+${intf_prefix}_default_init (${type_name(intf)}Interface *intfClass) 
+{
+	:> edit-section 'default_init' begin
+	/* insert custom code for interface initialization here ... */
+	:> endedit 
+}
+
+:> if [ not is_empty(intf.methods) ] then begin
+/* == interface methods == */
+
+:> paste snippet method_impls (intf, intf_prefix, FALSE)
+
+:> endif

@@ -166,6 +166,10 @@ ${class_prefix}_${method.name} (${method_signature(class, method, supress_param_
 
 :> done
 
+:> edit-section 'bottom' begin
+/* insert further definitions here... */
+:> endedit
+
 G_END_DECLS
 
 :> if [ not is_empty(class.module) ] then begin

@@ -47,8 +47,12 @@ module base {
 	
 	ginterface Movable {
 	
-		goto
-			<- location: geo/Location; 
+		methods {
+	
+			goto
+				<- location: geo/Location;
+				
+		} 
 	
 	}
 
@@ -73,6 +77,8 @@ gobject Dog {
 gobject Human [final] {
 	
 	inherits from base/Animal;
+	
+	implements base/Movable;
 	
 	signals {
 	
@@ -144,6 +150,9 @@ gobject Human [final] {
 			weight <- weight: float;
 			
 		talk [overridden];
+		
+		think
+			<- subject: any;
 				
 	}
 	

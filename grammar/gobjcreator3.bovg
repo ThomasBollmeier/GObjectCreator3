@@ -208,7 +208,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-ginterface = 'ginterface' name=ID LBRACE elem=(cfunc_prefix | interface_method)* RBRACE;
+ginterface = 'ginterface' name=ID LBRACE elem=(cfunc_prefix | method_section)* RBRACE;
 % ginterface {
 res = AstNode(self.getName())
 		
@@ -221,6 +221,10 @@ for element in astNode.getChildrenById('elem'):
 				
 return res
 % }
+
+<!----------------------------------------------------------------------------->
+
+
 
 <!----------------------------------------------------------------------------->
 
@@ -615,11 +619,12 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-method_section = visibility 'methods' LBRACE m=method* RBRACE;
+method_section = visibility? 'methods' LBRACE m=method* RBRACE;
 % method_section {
 res = AstNode(self.getName())
 
-res.addChild(astNode['visibility'])
+if astNode['visibility']:
+	res.addChild(astNode['visibility'])
 
 for method in astNode.getChildrenById('m'):
 	method.setId('')
@@ -639,21 +644,6 @@ res.addChild(astNode['visibility'])
 for attr in astNode.getChildrenById('a'):
 	attr.setId('')
 	res.addChild(attr)
-
-return res
-% }
-
-<!----------------------------------------------------------------------------->
-
-interface_method = name=ID ( ( in_param | out_param )* )? SEMICOLON;
-% interface_method {
-res = AstNode(self.getName())
-
-for child in astNode.getChildren():
-	if child.getId() == 'name':
-		res.addChild(AstNode('name', child.getText()))
-	elif child.getName() != 'token':
-		res.addChild(child) 
 
 return res
 % }

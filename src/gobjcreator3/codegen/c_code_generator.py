@@ -71,6 +71,7 @@ class CCodeGenerator(CodeGenerator):
         for intf in intfs:
             self._setup_ginterface_symbols(intf)
             self._gen_interface_header(intf)
+            self._gen_interface_source(intf)
             
         enums = [enum for enum in module.enumerations if enum.filepath_origin == self._origin]
         
@@ -115,6 +116,13 @@ class CCodeGenerator(CodeGenerator):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(intf)
         lines = self._get_lines_from_template("ginterface_header.template", file_path)
+                
+        self._create_text_file(file_path, lines)
+
+    def _gen_interface_source(self, intf):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(intf)
+        lines = self._get_lines_from_template("ginterface_source.template", file_path)
                 
         self._create_text_file(file_path, lines)
         
@@ -214,6 +222,8 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["PUBLIC"] = Visibility.PUBLIC
         self._template_processor["PROTECTED"] = Visibility.PROTECTED
         self._template_processor["PRIVATE"] = Visibility.PRIVATE
+        self._template_processor["OBJECT"] = Type.OBJECT
+        self._template_processor["INTERFACE"] = Type.INTERFACE
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
         self._template_processor["TYPE_MACRO"] = self._name_creator.create_type_macro
         self._template_processor["CAST_MACRO"] = self._name_creator.create_cast_macro
@@ -222,6 +232,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["literal_trim"] = self._literal_trim
         self._template_processor["length"] = self._length
         self._template_processor["to_upper"] = self._to_upper
+        self._template_processor["to_lower"] = self._to_lower
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
 
         self._template_processor["method_result"] = self._method_result
@@ -284,6 +295,8 @@ class CCodeGenerator(CodeGenerator):
         else:
             self._marshaller_names = None
             
+        self._template_processor["interface_impl_funcname"] = self._interface_impl_funcname
+            
     def _setup_ginterface_symbols(self, intf):
         
         self._template_processor["intf"] = intf
@@ -318,6 +331,10 @@ class CCodeGenerator(CodeGenerator):
     def _to_upper(self, text):
         
         return text.upper()
+
+    def _to_lower(self, text):
+        
+        return text.lower()
     
     def _literal_trim(self, text):
         
@@ -556,3 +573,13 @@ class CCodeGenerator(CodeGenerator):
     def _property_getter_section(self, prop):
         
         return "get_" + prop.name.replace("-", "_").lower()
+    
+    def _interface_impl_funcname(self, cls, intf, method_name):
+        
+        if cls.module == intf.module:
+            name = intf.name
+        else:
+            name = self._name_creator.create_full_type_name(intf)
+        intf_name = self._name_creator.replace_camel_case(name, "_").lower()
+        
+        return intf_name + "_" + method_name

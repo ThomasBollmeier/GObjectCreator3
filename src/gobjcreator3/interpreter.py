@@ -147,9 +147,9 @@ class Interpreter(object):
                 
         visitor.enter_ginterface(name, cfunc_prefix, self._cur_origin)
         
-        for method in ast.getChildrenByName("interface_method"):
-            self._eval_interface_method(method, visitor)
-        
+        for method_section in ast.getChildrenByName("method_section"):
+            self._eval_method_section(method_section, visitor, interface_name=name)
+                    
         visitor.exit_ginterface()
         
     def _eval_interface_method(self, method, visitor):
@@ -199,13 +199,23 @@ class Interpreter(object):
         
         visitor.visit_gflags(name, codes, self._cur_origin)
         
-    def _eval_method_section(self, ast, visitor):
+    def _eval_method_section(self, ast, visitor, interface_name=""):
         
-        visibility = self._visi_map[ast["visibility"].getText()]
-                
+        visiNode = ast["visibility"]
+        if visiNode:
+            if not interface_name:
+                visibility = self._visi_map[visiNode.getText()]
+            else:
+                raise Exception("Interface '%s': visibility must not be specified for interface methods" % interface_name)
+        elif not interface_name:
+            visibility = "private"
+                                                    
         for method in ast.getChildrenByName("method"):
             name = method["name"].getText()
-            self._eval_method(method, visitor, name, visibility)
+            if not interface_name:
+                self._eval_method(method, visitor, name, visibility)
+            else:
+                self._eval_interface_method(method, visitor)
             
     def _eval_method(self, ast, visitor, name, visibility):
         

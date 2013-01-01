@@ -1,29 +1,47 @@
-:> snippet method_impl(clif, prefix, method)
+:> snippet method_impl(clif, prefix, method, is_implementation, impl_method_name)
 
-	:> if [ method.visibility == PRIVATE ] then begin
+	:> if [ is_empty(impl_method_name) ] then begin
+		:> define section_name = method.name
+	:> else
+		:> define section_name = impl_method_name
+	:> endif
+	
+	:> if [ method.visibility == PRIVATE or is_implementation ] then begin
 static ${method_result(method)}
 	:> else
 ${method_result(method)}
 	:> endif	
+	:> if [ not is_implementation ] then begin	
 ${prefix}_${method.name} (${method_signature(clif, method, FALSE, TRUE, 1)})
+	:> elseif [ not is_empty(impl_method_name) ] then begin
+${prefix}_${impl_method_name}_im (${method_signature(clif, method, FALSE, TRUE, 1)})	
+	:> else
+${prefix}_${method.name}_im (${method_signature(clif, method, FALSE, TRUE, 1)})	
+	:> endif
 {
 	
-	:> if [ method.is_final ] then begin
+	:> if [ method.is_final or is_implementation ] then begin
 	
-	:> edit-section method.name begin
+	:> edit-section section_name begin
 	/* add your method implementation here...*/
 	:> endedit
 	
 	:> else
 	
-	${type_name(clif)}Class *klass = ${CAST_MACRO(clif)}_GET_CLASS (self);
+	:> if [ clif.category == OBJECT ] then begin
+		:> define typeInstance = "klass"
+	${type_name(clif)}Class *${typeInstance} = ${CAST_MACRO(clif)}_GET_CLASS (self);
+	:> else
+		:> define typeInstance = "intfClass"
+	${type_name(clif)}Interface *${typeInstance} = ${CAST_MACRO(clif)}_GET_INTERFACE (self);
+	:> endif
 	
-	g_assert (klass->${method.name} != NULL);
+	g_assert (${typeInstance}->${method.name} != NULL);
 	
 		:> if [ not method.returns_result() ] then begin
-	klass->${method.name} (${method_call_args(method, TRUE, 2)});
+	${typeInstance}->${method.name} (${method_call_args(method, TRUE, 2)});
 		:> else
-	return klass->${method.name} (${method_call_args(method, TRUE, 2)});
+	return ${typeInstance}->${method.name} (${method_call_args(method, TRUE, 2)});
 		:> endif
 	
 	:> endif
@@ -32,10 +50,10 @@ ${prefix}_${method.name} (${method_signature(clif, method, FALSE, TRUE, 1)})
 
 :> endsnippet
 
-:> snippet method_impls (clif, prefix)
+:> snippet method_impls (clif, prefix, is_implementation)
 
 :> for each method in clif.methods do
-	:> paste snippet method_impl(clif, prefix, method)	
+	:> paste snippet method_impl(clif, prefix, method, is_implementation, '')	
 :> done
 
 :> endsnippet

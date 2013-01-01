@@ -14,6 +14,10 @@
 
 G_BEGIN_DECLS
 
+:> edit-section 'top' begin
+/* insert further includes here... */
+:> endedit
+
 :> if [ not is_empty(intf.module) ] then begin
 #define ${MODULE_PREFIX}_TYPE_${INTF_NAME} \
 	(${intf_prefix}_get_type ())
@@ -21,8 +25,8 @@ G_BEGIN_DECLS
 	(G_TYPE_CHECK_INSTANCE_CAST ((obj), ${MODULE_PREFIX}_TYPE_${INTF_NAME}, ${type_name(intf)}))
 #define ${MODULE_PREFIX}_IS_${INTF_NAME}(obj) \
 	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), ${MODULE_PREFIX}_TYPE_${INTF_NAME}))
-#define ${MODULE_PREFIX}_${INTF_NAME}_GET_INTERFACE(inst) \
-	(G_TYPE_INSTANCE_GET_INTERFACE ((inst), ${MODULE_PREFIX}_TYPE_${INTF_NAME}, ${type_name(intf)}Interface))
+#define ${MODULE_PREFIX}_${INTF_NAME}_GET_INTERFACE(obj) \
+	(G_TYPE_INSTANCE_GET_INTERFACE ((obj), ${MODULE_PREFIX}_TYPE_${INTF_NAME}, ${type_name(intf)}Interface))
 :> else
 #define TYPE_${INTF_NAME} \
 	(${intf_prefix}_get_type ())
@@ -30,8 +34,8 @@ G_BEGIN_DECLS
 	(G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_${INTF_NAME}, ${type_name(intf)}))
 #define IS_${INTF_NAME}(obj) \
 	(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_${INTF_NAME}))
-#define ${INTF_NAME}_GET_INTERFACE(inst) \
-	(G_TYPE_INSTANCE_GET_INTERFACE ((inst), TYPE_${INTF_NAME}, ${type_name(intf)}Interface))
+#define ${INTF_NAME}_GET_INTERFACE(obj) \
+	(G_TYPE_INSTANCE_GET_INTERFACE ((obj), TYPE_${INTF_NAME}, ${type_name(intf)}Interface))
 :> endif
 
 typedef struct _${type_name(intf)}          ${type_name(intf)}; /* dummy object */

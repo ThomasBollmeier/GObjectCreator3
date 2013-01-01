@@ -2,6 +2,7 @@
 :> include "properties.template"
 :> include "signals.template"
 :> include "methods.template"
+:> include "interfaces.template"
 :> if [ class.has_protected_members() or not class.is_final ] then begin
 #include "${protected_header(class)}"
 :> else
@@ -65,6 +66,10 @@
 static ${FullClassName}Class *${class_prefix}_class = NULL;
 static GObjectClass *${class_prefix}_parent_class = NULL; 
 
+:> edit-section 'source-after-typedecl' begin
+/* ... */
+:> endedit
+
 :> if [ not is_empty(class.get_properties()) ] then begin
 	:> paste snippet prop_setter_getter_decl (class_prefix, class.get_properties())
 :> endif
@@ -76,39 +81,27 @@ static GObjectClass *${class_prefix}_parent_class = NULL;
 :> for each method in class.methods where not ( method.is_final or method.is_abstract ) do
 
 	:> if [ isFirst ] then begin
-/* default implementations for non-final methods */
-
+/* default implementation for non-final methods */
 	:> endif
 
-static ${method_result(method)}
-${class_prefix}_${method.name}_im (${method_signature(class, method, FALSE, TRUE, 1)})
-{
-
-	:> edit-section method.name begin
-	/* add your method implementation here...*/
-	:> endedit
-
-}
+	:> paste snippet method_impl(class, class_prefix, method, TRUE, '')
 
 :> done
 
 :> for each method_name in class.overridden do
+
 	:> if [ isFirst ] then begin
-/* implementations of overridden methods */
-
+/* implementation of overridden methods */
 	:> endif
+	
+	:> define defining_clif = method_def_class(class, method_name)
+	:> define method = method_by_name(class, method_name)
 
-static ${method_result(method_by_name(class, method_name))}
-${class_prefix}_${method_name}_im (${method_signature_by_name(class, method_name, FALSE, TRUE, 1)})
-{
-
-	:> edit-section method_name begin
-	/* add your method implementation here...*/
-	:> endedit
-
-}
+	:> paste snippet method_impl(defining_clif, class_prefix, method, TRUE, '')
 
 :> done
+
+:> paste snippet interface_initialization (class, class_prefix)
 
 :> if [ config.generate_base_functions ] then begin
 
@@ -185,24 +178,24 @@ ${class_prefix}_class_init (
 	gobj_class->dispose = ${class_prefix}_dispose;
 	gobj_class->finalize = ${class_prefix}_finalize;
 
-	:> for each method in class.methods where not method.is_final do
-		:> if [ isFirst ] then begin
+:> for each method in class.methods where not method.is_final do
+	:> if [ isFirst ] then begin
 	/* default implementations for non-final methods: */
-		:> endif
-		:> if [ not method.is_abstract ] then begin
+	:> endif
+	:> if [ not method.is_abstract ] then begin
 	${class_prefix}_class->${method.name} = ${class_prefix}_${method.name}_im;
-		:> else
+	:> else
 	${class_prefix}_class->${method.name} = NULL;
-		:> endif
-	:> done 
+	:> endif
+:> done 
 	
-	:> for each method_name in class.overridden do
-		:> if [ isFirst ] then begin
+:> for each method_name in class.overridden do
+	:> if [ isFirst ] then begin
 	/* register overridden methods: */
-		:> endif
+	:> endif
 	${method_def_class_cast(class, method_name)} (klass)->${method_name} = ${class_prefix}_${method_name}_im;
-	:> done
-
+:> done
+	
 :> if [ hasPrivAttrs ] then begin
 	/* register structure that contains private attributes: */
 	g_type_class_add_private (klass, sizeof (${FullClassName}Private));
@@ -305,6 +298,9 @@ ${class_prefix}_get_type (void)
 			:> else
 			0);	
 			:> endif
+			
+		:> paste snippet interface_registration (class, class_prefix, 'type') indent by 2
+		
 	}
 
 	return type;
@@ -426,6 +422,10 @@ ${class_prefix}_finalize (GObject* obj)
 
 /* == implementation of methods == */
 
-	:> paste snippet method_impls (class, class_prefix)
+	:> paste snippet method_impls (class, class_prefix, FALSE)
 
 :> endif
+
+:> edit-section 'source-bottom' begin
+/* ... */
+:> endedit

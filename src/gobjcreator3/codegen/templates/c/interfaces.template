@@ -1,0 +1,44 @@
+:> snippet interface_initialization (class, prefix)
+
+:> for each interface in class.interfaces do
+	:> for each method in interface.methods do
+		:> paste snippet method_impl(interface, prefix, method, TRUE, interface_impl_funcname(class, interface, method.name))
+	:> done 
+:> done
+
+:> for each interface in class.interfaces do
+static void
+${prefix}_${interface_impl_funcname(class, interface, 'intf_init')} (${type_name(interface)}Interface *intfClass)
+{
+
+	:> for each method in interface.methods do
+	intfClass->${method.name} = ${prefix}_${interface_impl_funcname(class, interface, method.name)}_im;
+	:> done
+	
+}
+
+:> done
+
+:> endsnippet
+
+:> snippet interface_registration (class, prefix, type_varname)
+
+:> for each interface in class.interfaces do
+
+	:> define varname = to_lower(CAST_MACRO(interface))
+
+const GInterfaceInfo ${varname}_info = {
+	(GInterfaceInitFunc) ${prefix}_${interface_impl_funcname(class, interface, 'intf_init')}, /* interface_init */
+	NULL,	/* interface_finalize */
+	NULL	/* interface_data */
+	};
+
+g_type_add_interface_static (
+	${type_varname},
+	${TYPE_MACRO(interface)},
+   	&${varname}_info
+   	);
+
+:> done
+
+:> endsnippet
