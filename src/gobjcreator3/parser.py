@@ -250,26 +250,29 @@ all_token_types.append(KEY_46)
 KEY_47 = token.Keyword('private', caseSensitive=True)
 all_token_types.append(KEY_47)
 
-KEY_48 = token.Keyword('const', caseSensitive=True)
+KEY_48 = token.Keyword('override', caseSensitive=True)
 all_token_types.append(KEY_48)
 
-KEY_49 = token.Keyword('static', caseSensitive=True)
+KEY_49 = token.Keyword('of', caseSensitive=True)
 all_token_types.append(KEY_49)
 
-KEY_50 = token.Keyword('overridden', caseSensitive=True)
+KEY_50 = token.Keyword('const', caseSensitive=True)
 all_token_types.append(KEY_50)
 
-KEY_51 = token.Keyword('ref', caseSensitive=True)
+KEY_51 = token.Keyword('static', caseSensitive=True)
 all_token_types.append(KEY_51)
 
-KEY_52 = token.Keyword('list', caseSensitive=True)
+KEY_52 = token.Keyword('ref', caseSensitive=True)
 all_token_types.append(KEY_52)
 
-KEY_53 = token.Keyword('unsigned', caseSensitive=True)
+KEY_53 = token.Keyword('list', caseSensitive=True)
 all_token_types.append(KEY_53)
 
-KEY_54 = token.Keyword('any', caseSensitive=True)
+KEY_54 = token.Keyword('unsigned', caseSensitive=True)
 all_token_types.append(KEY_54)
+
+KEY_55 = token.Keyword('any', caseSensitive=True)
+all_token_types.append(KEY_55)
 
 class _PropTypeRule(grammar.Rule):
 
@@ -410,7 +413,7 @@ class _ParamPropertyRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_48)
+		return grammar.tokenNode(KEY_50)
 		
 class _PropAccessModeRule(grammar.Rule):
 
@@ -598,7 +601,7 @@ class _AttrPropertyRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_49)
+		return grammar.tokenNode(KEY_51)
 		
 class _GflagsRule(grammar.Rule):
 
@@ -947,7 +950,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_3_1(self):
 		
-		return grammar.zeroToOne(grammar.tokenNode(KEY_53))
+		return grammar.zeroToOne(grammar.tokenNode(KEY_54))
 		
 	def _sub_3_2(self):
 		
@@ -975,7 +978,7 @@ class _BuiltinTypeRule(grammar.Rule):
 		
 	def _sub_6_1(self):
 		
-		return grammar.tokenNode(KEY_54)
+		return grammar.tokenNode(KEY_55)
 		
 class _VisibilityRule(grammar.Rule):
 
@@ -1402,7 +1405,6 @@ class _MethodPropertyRule(grammar.Rule):
 		start.connect(self._sub_1()).connect(end)
 		start.connect(self._sub_2()).connect(end)
 		start.connect(self._sub_3()).connect(end)
-		start.connect(self._sub_4()).connect(end)
 		
 	def transform(self, astNode):
 		
@@ -1416,7 +1418,7 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_1_1(self):
 		
-		return grammar.tokenNode(KEY_49)
+		return grammar.tokenNode(KEY_51)
 		
 	def _sub_2(self):
 		
@@ -1432,15 +1434,79 @@ class _MethodPropertyRule(grammar.Rule):
 		
 	def _sub_3_1(self):
 		
-		return grammar.tokenNode(KEY_50)
-		
-	def _sub_4(self):
-		
-		return self._sub_4_1()
-		
-	def _sub_4_1(self):
-		
 		return grammar.tokenNode(KEY_10)
+		
+class _OverrideRule(grammar.Rule):
+
+	def __init__(self, ident=''):
+	
+		grammar.Rule.__init__(self, 'override', ident)
+		
+	def expand(self, start, end, context):
+		
+		start.connect(self._sub_1()).connect(end)
+		
+	def transform(self, astNode):
+		
+		
+		res = AstNode(self.getName())
+		
+		res.addChild(AstNode('name', astNode['#method_name'].getText()))
+		
+		intf_name = astNode['#intf_name']
+		if intf_name:
+			intf_name.setId('')
+			res.addChild(intf_name)
+		
+		return res
+		
+		
+	def _sub_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_1())
+		elements.append(self._sub_1_2())
+		elements.append(self._sub_1_3())
+		elements.append(self._sub_1_4())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_1(self):
+		
+		return grammar.tokenNode(KEY_48)
+		
+	def _sub_1_2(self):
+		
+		return grammar.tokenNode(ID, 'method_name')
+		
+	def _sub_1_3(self):
+		
+		return grammar.zeroToOne(self._sub_1_3_1())
+		
+	def _sub_1_3_1(self):
+		
+		elements = []
+		elements.append(self._sub_1_3_1_1())
+		elements.append(self._sub_1_3_1_2())
+		elements.append(self._sub_1_3_1_3())
+		
+		return grammar.Sequence(elements)
+		
+	def _sub_1_3_1_1(self):
+		
+		return grammar.tokenNode(KEY_49)
+		
+	def _sub_1_3_1_2(self):
+		
+		return grammar.tokenNode(KEY_5)
+		
+	def _sub_1_3_1_3(self):
+		
+		return _FullTypeNameRule('intf_name')
+		
+	def _sub_1_4(self):
+		
+		return grammar.tokenNode(SEMICOLON)
 		
 class _InclpathRule(grammar.Rule):
 
@@ -2490,7 +2556,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_1_1(self):
 		
-		return grammar.tokenNode(KEY_51)
+		return grammar.tokenNode(KEY_52)
 		
 	def _sub_1_1_2(self):
 		
@@ -2498,7 +2564,7 @@ class _ArgtypeRule(grammar.Rule):
 		
 	def _sub_1_1_2_1(self):
 		
-		return grammar.tokenNode(KEY_52)
+		return grammar.tokenNode(KEY_53)
 		
 	def _sub_1_2(self):
 		
@@ -3226,9 +3292,9 @@ class _MethodSectionRule(grammar.Rule):
 		if astNode['visibility']:
 			res.addChild(astNode['visibility'])
 		
-		for method in astNode.getChildrenById('m'):
-			method.setId('')
-			res.addChild(method)
+		for child in astNode.getChildrenById('elem'):
+			child.setId('')
+			res.addChild(child)
 		
 		return res
 		
@@ -3257,7 +3323,27 @@ class _MethodSectionRule(grammar.Rule):
 		
 	def _sub_1_4(self):
 		
-		return grammar.zeroToMany(_MethodRule('m'))
+		branches = []
+		branches.append(self._sub_1_4_1())
+		branches.append(self._sub_1_4_2())
+		
+		return grammar.zeroToMany(grammar.Fork(branches))
+		
+	def _sub_1_4_1(self):
+		
+		return self._sub_1_4_1_1()
+		
+	def _sub_1_4_1_1(self):
+		
+		return _MethodRule('elem')
+		
+	def _sub_1_4_2(self):
+		
+		return self._sub_1_4_2_1()
+		
+	def _sub_1_4_2_1(self):
+		
+		return _OverrideRule('elem')
 		
 	def _sub_1_5(self):
 		

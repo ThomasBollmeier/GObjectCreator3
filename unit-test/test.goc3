@@ -10,6 +10,8 @@ module base {
 
 	gobject Animal [abstract] {
 	
+		implements Movable;
+	
 		properties {
 		
 			category {
@@ -77,8 +79,6 @@ gobject Dog {
 gobject Human [final] {
 	
 	inherits from base/Animal;
-	
-	implements base/Movable;
 	
 	signals {
 	
@@ -149,10 +149,12 @@ gobject Human [final] {
 			last-name <- last_name: string [const]
 			weight <- weight: float;
 			
-		talk [overridden];
+		override talk;
 		
 		think
 			<- subject: any;
+			
+		override goto of ginterface base/Movable;
 				
 	}
 	

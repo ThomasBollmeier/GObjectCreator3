@@ -1,18 +1,12 @@
 :> snippet interface_initialization (class, prefix)
 
 :> for each interface in class.interfaces do
-	:> for each method in interface.methods do
-		:> paste snippet method_impl(interface, prefix, method, TRUE, interface_impl_funcname(class, interface, method.name))
-	:> done 
-:> done
-
-:> for each interface in class.interfaces do
 static void
 ${prefix}_${interface_impl_funcname(class, interface, 'intf_init')} (${type_name(interface)}Interface *intfClass)
 {
 
 	:> for each method in interface.methods do
-	intfClass->${method.name} = ${prefix}_${interface_impl_funcname(class, interface, method.name)}_im;
+	intfClass->${method.name} = ${prefix}_${interface_impl_funcname(class, interface, method.name)};
 	:> done
 	
 }

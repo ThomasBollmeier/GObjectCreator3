@@ -8,7 +8,7 @@ from gobjcreator3.model.method import Parameter
 from gobjcreator3.model.property import PropType, PropAccess
 import os
 import re
-import fabscript
+import faberscriptorum
 
 class CGenConfig(object):
     
@@ -212,7 +212,7 @@ class CCodeGenerator(CodeGenerator):
         
     def _refresh_template_processor(self):
         
-        self._template_processor = fabscript.API()
+        self._template_processor = faberscriptorum.API()
         self._template_processor.setEditableSectionStyle(self._template_processor.Language.C)
         self._template_processor.setIncludePath([self._template_dir])
                 
@@ -235,6 +235,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["to_lower"] = self._to_lower
         self._template_processor["rearrange_asterisk"] = self._rearrange_asterisk
 
+        self._template_processor["method_basename"] = self._method_basename
         self._template_processor["method_result"] = self._method_result
         self._template_processor["method_signature"] = self._method_signature
         self._template_processor["method_signature_by_name"] = self._method_signature_by_name
@@ -365,7 +366,29 @@ class CCodeGenerator(CodeGenerator):
                 break
             
         return self._rearrange_asterisk(result_type)
-            
+    
+    def _method_basename(self,
+                         cls,
+                         method_info
+                         ):
+        
+        method_or_name, intf = method_info
+        
+        if not isinstance(method_or_name, str):
+            res = method_or_name.name
+        else:
+            res = method_or_name
+        
+        if intf:
+            if cls.module == intf.module:
+                name = intf.name
+            else:
+                name = self._name_creator.create_full_type_name(intf)
+            intf_name = self._name_creator.replace_camel_case(name, "_").lower()
+            res = intf_name + "_" + res 
+        
+        return res
+                    
     def _method_signature(self, 
                           cls,
                           method,
@@ -473,21 +496,24 @@ class CCodeGenerator(CodeGenerator):
                                       instance_name
                                       )
         
-    def _method_by_name(self, cls, method_name):
+    def _method_by_name(self, cls, method_name, intf=None):
         
-        minfo = cls.get_method_info(method_name)
+        minfo = cls.get_method_info(method_name, intf)
         
         return minfo.method
     
-    def _method_def_class(self, cls, method_name):
+    def _method_def_class(self, cls, method_name, intf=None):
 
-        minfo = cls.get_method_info(method_name)
+        minfo = cls.get_method_info(method_name, intf)
         
-        return minfo.def_origin
+        if minfo:
+            return minfo.def_origin
+        else:
+            raise Exception("No class found for method '%s'" % method_name)
+                
+    def _method_def_class_cast(self, cls, method_name, intf=None):
         
-    def _method_def_class_cast(self, cls, method_name):
-        
-        minfo = cls.get_method_info(method_name)
+        minfo = cls.get_method_info(method_name, intf)
         
         defcls = minfo.def_origin
         class_name = self._name_creator.replace_camel_case(defcls.name, "_").upper()
@@ -500,10 +526,12 @@ class CCodeGenerator(CodeGenerator):
             module_prefix = module.name.upper() + module_prefix
             module = module.module
             
+        res = class_name + "_CLASS"
+            
         if module_prefix:
-            return module_prefix + "_" + class_name + "_CLASS"
-        else: 
-            return class_name + "_CLASS"
+            res = module_prefix + "_" + res
+
+        return res 
     
     def _signal_technical_name(self, signal):
         

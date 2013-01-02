@@ -174,6 +174,19 @@ class TestVisitor(AstVisitor):
             self._dedent()
         self._dedent()
         
+    def visit_override(self,
+                       name,
+                       interface,
+                       visibility
+                       ):
+        
+        self._write("Overridden: %s" % name)
+        self._indent()
+        if interface:
+            self._write("Interface: %s" % interface)
+        self._write("Visibility: %s" % visibility)
+        self._dedent()
+        
     def visit_attribute(self, aname, atype, aattributes):
         
         self._write("Attribute: %s (%s) %s" % (aname, atype, aattributes))

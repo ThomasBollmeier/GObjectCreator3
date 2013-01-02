@@ -116,14 +116,23 @@ struct _${FullClassName}Class
   	${type_name(class.super_class)}Class super;
   	:> endif
 
-	:> for each method in class.methods where not method.is_final do
+	:> for each method_info in class.methods where not method_info[0].is_final do
+	
+		:> define method = method_info[0]
+		:> define intf = method_info[1]
+		
 		:> if [ isFirst ] then begin
 	/* non-final methods: */
-	
+		:> endif
+		
+		:> if [ is_empty(intf) ] then begin
+			:> define clif = class
+		:> else
+			:> define clif = intf
 		:> endif
 	${method_result(method)} 
-	(*${method.name}) (${method_signature(class, method, FALSE, TRUE, 2)});
-
+	(*${method_basename(class, method_info)}) (${method_signature(clif, method, FALSE, TRUE, 2)});
+	
 	:> done
 	  	
 	:> if [ hasProtClassAttrs ] then begin
@@ -154,15 +163,19 @@ ${class_prefix}_new (void);
 	:> endif
 :> endif
  
-:> for each method in class.methods where method.visibility == PUBLIC do
+:> for each method_info in class.methods where method_info[0].visibility == PUBLIC and is_empty(method_info[1]) do
+
+	:> define method = method_info[0]
+	:> define intf = method_info[1]
+	
 	:> if [ isFirst ] then begin
 /*
  * public methods:
  */
+	:> endif
  	
- 	:> endif	
 ${method_result(method)}
-${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});   	
+${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});
 
 :> done
 

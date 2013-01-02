@@ -1,5 +1,5 @@
-from gobjcreator3.model.clsintf import ClsIntf
 from gobjcreator3.model.type import Type
+from gobjcreator3.model.clsintf import ClsIntf
 from gobjcreator3.model.visibility import Visibility
 
 class GObject(ClsIntf):
@@ -12,7 +12,11 @@ class GObject(ClsIntf):
         self.is_final = False
         self.super_class = None
         self.constructor = None
-        self.interfaces = []
+        
+        self._interfaces = []
+        
+        self._methods = []
+        self._methods_d = {}
         
         self.overridden = []
         
@@ -25,45 +29,66 @@ class GObject(ClsIntf):
         self._signals = []
         self._signals_d = {}
         
+    def implement(self, intf):
+        
+        self._interfaces.append(intf)
+        for method in intf.methods:
+            self.add_method(method, intf)
+        
+    def get_interfaces(self):
+        
+        return self._interfaces
+    
+    interfaces = property(get_interfaces)
+        
     def add_constructor(self, method):
         
         self.constructor = method
         
-    def add_method(self, method):
+    def add_method(self, method, intf=None):
         
-        if self.get_method(method.name):
-            raise Exception("Method '%s' has already been defined" % method.name)
+        info = self.get_method_info(method.name, intf)
         
-        ClsIntf.add_method(self, method)
+        if info:
+            raise Exception("Method '%s' has already been defined in class '%s'" % (method.name, info.def_origin))
         
-    def get_method(self, method_name):
+        key = (method.name, intf)
+                
+        self._methods.append((method, intf))
+        self._methods_d[key] = method
+         
+    def get_method_info(self, method_name, intf=None):
         
-        info = self.get_method_info(method_name)
-        
-        return info and info.method or None
-        
-    def get_method_info(self, method_name):
-        
+        method_key = (method_name, intf)
         cls = self
         while cls:
-            if method_name in cls._methods_d:
-                meth = cls._methods_d[method_name]
+            if method_key in cls._methods_d:
+                meth = cls._methods_d[method_key]
                 if cls == self or meth.visibility != Visibility.PRIVATE:
-                    return MethodInfo(meth, cls)
+                    return MethodInfo(cls, meth, intf)
             cls = cls.super_class
 
         return None
     
-    def override(self, method_name):
+    def get_methods(self):
         
-        info = self.get_method_info(method_name)
+        return self._methods
+    
+    methods = property(get_methods)
+    
+    def override(self, method_name, intf, new_visibility):
+        
+        info = self.get_method_info(method_name, intf)
         if not info:
             raise Exception("Method '%s' has not been defined!" % method_name)
         
         if info.method.is_final:
             raise Exception("Final method '%s' cannot be overridden!" % method_name)
         
-        self.overridden.append(method_name)
+        if new_visibility != info.method.visibility:
+            raise Exception("Override must not change visibility of method '%s'!" % method_name)
+        
+        self.overridden.append((method_name, intf))
         
     def add_attribute(self, attr):
 
@@ -160,7 +185,7 @@ class GObject(ClsIntf):
         if has_prot_attrs:
             return True
         else:
-            return bool([meth for meth in self.methods if meth.visibility == Visibility.PROTECTED])
+            return bool([meth for meth in self.methods if meth[0].visibility == Visibility.PROTECTED])
             
     def has_signals(self):
         
@@ -168,7 +193,9 @@ class GObject(ClsIntf):
         
 class MethodInfo(object):
     
-    def __init__(self, method, def_origin):
+    def __init__(self, def_origin, method, interface):
         
-        self.method = method
         self.def_origin = def_origin
+        self.method = method
+        self.interface = interface
+        

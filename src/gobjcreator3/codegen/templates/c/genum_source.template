@@ -8,11 +8,11 @@ GType
 ${enum_prefix}_get_type (void)
 {
 
-	static GType gtype = NULL;
+	static GType gtype = 0;
 	GEnumValue *values;
 	guint idx;
 	
-	if (gtype == NULL) 
+	if (gtype == 0) 
 	{
 		values = g_new (GEnumValue, ${length(enum.code_names_values)} + 1);
 		idx = 0;

@@ -48,7 +48,7 @@ class NameCreator(object):
         if isinstance(type_, Reference):
             res = self.create_full_type_name(type_.target_type) + "*"
         elif isinstance(type_, List):
-            res = self.create_full_type_name(type_.line_type) + "*"
+            res = "GList*" #self.create_full_type_name(type_.line_type) + "*"
         elif isinstance(type_, BuiltIn):
             res = {"string" : "gchar*",
                    "boolean": "gboolean",

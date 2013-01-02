@@ -1,59 +1,108 @@
-:> snippet method_impl(clif, prefix, method, is_implementation, impl_method_name)
+:> snippet method_implementation(class, prefix, method_info)
 
-	:> if [ is_empty(impl_method_name) ] then begin
-		:> define section_name = method.name
+	:> define method = method_info[0]
+	:> define intf = method_info[1]
+	:> define basename = method_basename(class, method_info)
+	
+	:> if [ is_empty(intf) ] then begin
+		:> define clif = method_def_class(class, method.name)
 	:> else
-		:> define section_name = impl_method_name
+		:> define clif = intf
 	:> endif
 	
-	:> if [ method.visibility == PRIVATE or is_implementation ] then begin
+	:> if [ method.visibility == PRIVATE or not method.is_final ] then begin
 static ${method_result(method)}
 	:> else
 ${method_result(method)}
 	:> endif	
-	:> if [ not is_implementation ] then begin	
-${prefix}_${method.name} (${method_signature(clif, method, FALSE, TRUE, 1)})
-	:> elseif [ not is_empty(impl_method_name) ] then begin
-${prefix}_${impl_method_name}_im (${method_signature(clif, method, FALSE, TRUE, 1)})	
-	:> else
-${prefix}_${method.name}_im (${method_signature(clif, method, FALSE, TRUE, 1)})	
+	:> if [ not method.is_final ] then begin
+${prefix}_${basename}_im (${method_signature(clif, method, FALSE, TRUE, 1)})
+	:> else	
+${prefix}_${basename} (${method_signature(clif, method, FALSE, TRUE, 1)})	
 	:> endif
-{
-	
-	:> if [ method.is_final or is_implementation ] then begin
-	
-	:> edit-section section_name begin
+{		
+	:> edit-section basename begin
 	/* add your method implementation here...*/
 	:> endedit
-	
+}
+
+:> endsnippet
+
+:> snippet method_virtual (class, prefix, method_info)
+
+	:> define method = method_info[0]
+	:> define intf = method_info[1]
+	:> define basename = method_basename(class, method_info)
+	:> define defcls = method_def_class(class, method.name, intf)
+
+	:> if [ is_empty(intf) ] then begin
+		:> define clif = defcls
 	:> else
-	
-	:> if [ clif.category == OBJECT ] then begin
-		:> define typeInstance = "klass"
-	${type_name(clif)}Class *${typeInstance} = ${CAST_MACRO(clif)}_GET_CLASS (self);
-	:> else
-		:> define typeInstance = "intfClass"
-	${type_name(clif)}Interface *${typeInstance} = ${CAST_MACRO(clif)}_GET_INTERFACE (self);
+		:> define clif = intf
 	:> endif
 	
-	g_assert (${typeInstance}->${method.name} != NULL);
+	:> if [ is_empty(intf) ] then begin
+${method_result(method)}	
+	:> else
+static ${method_result(method)}
+	:> endif
+${prefix}_${basename} (${method_signature(clif, method, FALSE, TRUE, 1)})
+{
+	${type_name(defcls)}Class *klass = ${CAST_MACRO(defcls)}_GET_CLASS (self);
 	
-		:> if [ not method.returns_result() ] then begin
-	${typeInstance}->${method.name} (${method_call_args(method, TRUE, 2)});
-		:> else
-	return ${typeInstance}->${method.name} (${method_call_args(method, TRUE, 2)});
-		:> endif
+	g_assert (klass->${basename} != NULL);
 	
+	:> if [ not method.returns_result() ] then begin
+	klass->${basename} (${method_call_args(method, TRUE, 2)});
+	:> else
+	return klass->${basename} (${method_call_args(method, TRUE, 2)});
 	:> endif
 	
 }
 
 :> endsnippet
 
-:> snippet method_impls (clif, prefix, is_implementation)
+:> snippet method_overridden(class, prefix, override_info)
 
-:> for each method in clif.methods do
-	:> paste snippet method_impl(clif, prefix, method, is_implementation, '')	
-:> done
+	:> define method_name = override_info[0]
+	:> define intf = override_info[1]
+	:> define method = method_by_name(class, method_name, intf)
+	:> define basename = method_basename(class, override_info)
+	
+	:> if [ is_empty(intf) ] then begin
+		:> define clif = method_def_class(class, method_name)
+	:> else
+		:> define clif = intf
+	:> endif
+	
+static ${method_result(method)}
+${prefix}_${basename}_im (${method_signature(clif, method, FALSE, TRUE, 1)})
+{		
+	:> edit-section basename begin
+	/* add your method implementation here...*/
+	:> endedit
+}
+
+:> endsnippet
+
+:> snippet method_interface(intf, prefix, method)
+
+	:> define section_name = method.name
+	
+${method_result(method)}
+${prefix}_${method.name} (${method_signature(intf, method, FALSE, TRUE, 1)})
+{
+	
+	${type_name(intf)}Interface *intfClass = ${CAST_MACRO(intf)}_GET_INTERFACE (self);
+	
+	g_assert (intfClass->${method.name} != NULL);
+	
+	:> if [ not method.returns_result() ] then begin
+	intfClass->${method.name} (${method_call_args(method, TRUE, 2)});
+	:> else
+	return intfClass->${method.name} (${method_call_args(method, TRUE, 2)});
+	:> endif
+	
+}
 
 :> endsnippet

@@ -61,11 +61,18 @@ class AstVisitor(object):
                      parameters,
                      ):
         pass
-    
+        
     def visit_interface_method(self,
                                name,
                                parameters
                                ):
+        pass
+    
+    def visit_override(self,
+                       name,
+                       interface,
+                       visibility
+                       ):
         pass
     
     def visit_attribute(self,

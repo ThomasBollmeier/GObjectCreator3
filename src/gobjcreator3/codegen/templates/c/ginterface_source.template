@@ -21,6 +21,8 @@ ${intf_prefix}_default_init (${type_name(intf)}Interface *intfClass)
 :> if [ not is_empty(intf.methods) ] then begin
 /* == interface methods == */
 
-:> paste snippet method_impls (intf, intf_prefix, FALSE)
+	:> for each method in intf.methods do
+		:> paste snippet method_interface(intf, intf_prefix, method)	
+	:> done
 
 :> endif

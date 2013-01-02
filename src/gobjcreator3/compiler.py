@@ -35,6 +35,9 @@ class Compiler(object):
         
         step1 = CompileStep1(root_module)
         self._interpreter.eval_grammar(expanded_ast, step1)
+
+        step2 = CompileStep2(root_module)
+        self._interpreter.eval_grammar(expanded_ast, step2)
                 
         return root_module
 
@@ -329,12 +332,6 @@ class CompileStep1(AstVisitor):
                 raise Exception("Super type '%s' does not exist or is not a class!" % super_class)
             self._gobject.super_class = super_
         
-        for intf_info in interfaces:
-            intf = self._get_type(intf_info)
-            if intf is None or intf.category != Type.INTERFACE:
-                raise Exception("Interface type '%s' does not exist!" % intf_info)
-            self._gobject.interfaces.append(intf)
-    
     def exit_gobject(self):
 
         self._gobject = None
@@ -376,29 +373,23 @@ class CompileStep1(AstVisitor):
                      parameters 
                      ):
         
-        if not attributes['overridden']:
+        method = Method(name)
 
-            method = Method(name)
-
-            method.visibility = attributes["visibility"]
+        method.visibility = attributes["visibility"]
+        
+        if attributes["static"]:
+            method.set_static()
+        
+        if attributes["abstract"]:
+            method.set_abstract()
+        
+        if attributes["final"]:
+            method.set_final()
             
-            if attributes["static"]:
-                method.set_static()
+        method.parameters = self._get_parameters(name, parameters)
+        
+        self._gobject.add_method(method)
             
-            if attributes["abstract"]:
-                method.set_abstract()
-            
-            if attributes["final"]:
-                method.set_final()
-                
-            method.parameters = self._get_parameters(name, parameters)
-            
-            self._gobject.add_method(method)
-            
-        else:
-            
-            self._gobject.override(name)
-    
     def visit_interface_method(self,
                                name,
                                parameters
@@ -483,4 +474,82 @@ class CompileStep1(AstVisitor):
                         has_default_handler
                         )
         self._gobject.add_signal(signal)
+
+class CompileStep2(AstVisitor):
     
+    def __init__(self, root_module):
+        
+        AstVisitor.__init__(self)
+        
+        self._root_module = root_module
+        self._curobj = None
+        
+    def enter_grammar(self):
+        
+        self._module_stack = [self._root_module]
+        
+    def exit_grammar(self):
+        
+        self._module_stack.pop()
+
+    def enter_module(self, module_name, origin):
+        
+        module = self._module_stack[-1].get_module(module_name)
+        self._module_stack.append(module)
+            
+    def exit_module(self):
+        
+        self._module_stack.pop()
+        
+    def enter_gobject(self, 
+                      name,
+                      is_abstract,
+                      is_final,
+                      super_class,
+                      interfaces,
+                      cfunc_prefix,
+                      origin
+                      ):
+        
+        self._curobj = self._module_stack[-1].get_object(name)
+        
+        for intf_info in interfaces:
+            intf = self._get_interface(intf_info)
+            if intf is None or intf.category != Type.INTERFACE:
+                raise Exception("Interface type '%s' does not exist!" % intf_info)
+            self._curobj.implement(intf)
+        
+    def exit_gobject(self):
+        
+        self._curobj = None
+
+    def visit_override(self,
+                       name,
+                       interface,
+                       visibility
+                       ):
+        
+        intf = interface and self._get_interface(interface) or None
+        
+        self._curobj.override(name, intf, visibility) 
+    
+    def _get_interface(self, intf_info):
+        
+        path = ""
+        for part in intf_info.module_path:
+            if path:
+                path += ModuleElement.MODULE_SEP
+            path += part
+            
+        if path:
+            path += ModuleElement.MODULE_SEP + intf_info.name
+        else:
+            path = intf_info.name 
+            
+        if not intf_info.is_absolute_type:
+            module = self._module_stack[-1]
+        else:
+            module = self._root_module
+            
+        return module.get_interface(path)
+        

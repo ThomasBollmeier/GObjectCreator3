@@ -70,6 +70,39 @@ static GObjectClass *${class_prefix}_parent_class = NULL;
 /* ... */
 :> endedit
 
+:> if [ not is_empty(class.methods) ] then begin
+
+/* == implementation of methods == */
+
+	:> for each method_info in class.methods do
+		
+		:> define meth = method_info[0]
+		:> define intf = method_info[1]
+		
+		:> if [ not is_empty(intf) or not meth.is_abstract ] then begin
+			:> paste snippet method_implementation(class, class_prefix, method_info)
+		:> endif
+		
+		:> if [ not is_empty(intf) or not meth.is_final ] then begin
+			:> paste snippet method_virtual(class, class_prefix, method_info)
+		:> endif
+		
+	:> done
+	
+:> endif
+
+:> paste snippet interface_initialization (class, class_prefix)
+
+:> for each override in class.overridden do
+
+	:> if [ isFirst ] then begin
+/* implementation of overridden methods */
+	:> endif
+
+	:> paste snippet method_overridden(class, class_prefix, override)
+
+:> done
+
 :> if [ not is_empty(class.get_properties()) ] then begin
 	:> paste snippet prop_setter_getter_decl (class_prefix, class.get_properties())
 :> endif
@@ -77,31 +110,6 @@ static GObjectClass *${class_prefix}_parent_class = NULL;
 :> if [ class.has_signals() ] then begin
 	:> paste snippet signal_def_and_handlers (class_prefix, class, class.get_signals())
 :> endif
-
-:> for each method in class.methods where not ( method.is_final or method.is_abstract ) do
-
-	:> if [ isFirst ] then begin
-/* default implementation for non-final methods */
-	:> endif
-
-	:> paste snippet method_impl(class, class_prefix, method, TRUE, '')
-
-:> done
-
-:> for each method_name in class.overridden do
-
-	:> if [ isFirst ] then begin
-/* implementation of overridden methods */
-	:> endif
-	
-	:> define defining_clif = method_def_class(class, method_name)
-	:> define method = method_by_name(class, method_name)
-
-	:> paste snippet method_impl(defining_clif, class_prefix, method, TRUE, '')
-
-:> done
-
-:> paste snippet interface_initialization (class, class_prefix)
 
 :> if [ config.generate_base_functions ] then begin
 
@@ -178,22 +186,30 @@ ${class_prefix}_class_init (
 	gobj_class->dispose = ${class_prefix}_dispose;
 	gobj_class->finalize = ${class_prefix}_finalize;
 
-:> for each method in class.methods where not method.is_final do
+:> for each method_info in class.methods where not method_info[0].is_final do
+	:> define method = method_info[0]
+	:> define intf = method_info[1]
 	:> if [ isFirst ] then begin
 	/* default implementations for non-final methods: */
 	:> endif
-	:> if [ not method.is_abstract ] then begin
-	${class_prefix}_class->${method.name} = ${class_prefix}_${method.name}_im;
+	:> define basename = method_basename(class, method_info)
+	:> if [ not method.is_abstract or not is_empty(intf) ] then begin
+	${class_prefix}_class->${basename} = ${class_prefix}_${basename}_im;
 	:> else
-	${class_prefix}_class->${method.name} = NULL;
+	${class_prefix}_class->${basename} = NULL;
 	:> endif
 :> done 
 	
-:> for each method_name in class.overridden do
+:> for each override in class.overridden do
 	:> if [ isFirst ] then begin
 	/* register overridden methods: */
 	:> endif
-	${method_def_class_cast(class, method_name)} (klass)->${method_name} = ${class_prefix}_${method_name}_im;
+	:> define method_name = override[0]
+	:> define intf = override[1]
+	:> define defcls = method_def_class(class, method_name, intf)
+	:> define orig_basename = method_basename(defcls, override)
+	:> define basename = method_basename(class, override)
+	${method_def_class_cast(class, method_name, intf)} (klass)->${orig_basename} = ${class_prefix}_${basename}_im;
 :> done
 	
 :> if [ hasPrivAttrs ] then begin
@@ -416,14 +432,6 @@ ${class_prefix}_finalize (GObject* obj)
 
 :> if [ not is_empty(class.get_properties()) ] then begin
 	:> paste snippet prop_setter_getter_impl(class_prefix, class.get_properties(), 'Class', FullClassName)
-:> endif
-
-:> if [ not is_empty(class.methods) ] then begin
-
-/* == implementation of methods == */
-
-	:> paste snippet method_impls (class, class_prefix, FALSE)
-
 :> endif
 
 :> edit-section 'source-bottom' begin

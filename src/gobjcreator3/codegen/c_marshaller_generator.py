@@ -1,4 +1,4 @@
-import fabscript
+import faberscriptorum
 import os
 import gobjcreator3.model.type as type_def
 from gobjcreator3.codegen.name_creator import NameCreator
@@ -147,7 +147,7 @@ class CMarshallerGenerator(object):
     
     def _create_codegenerator(self):
  
-        res = fabscript.API()
+        res = faberscriptorum.API()
         res.setEditableSectionStyle(res.Language.C)
         
         res["length"] = len

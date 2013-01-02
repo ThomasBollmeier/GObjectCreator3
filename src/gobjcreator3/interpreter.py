@@ -208,7 +208,7 @@ class Interpreter(object):
             else:
                 raise Exception("Interface '%s': visibility must not be specified for interface methods" % interface_name)
         elif not interface_name:
-            visibility = "private"
+            visibility = self._visi_map["private"]
                                                     
         for method in ast.getChildrenByName("method"):
             name = method["name"].getText()
@@ -216,6 +216,15 @@ class Interpreter(object):
                 self._eval_method(method, visitor, name, visibility)
             else:
                 self._eval_interface_method(method, visitor)
+                
+        for override in ast.getChildrenByName("override"):
+            children = override.getChildren()
+            method_name = children[0].getText()
+            if len(children) == 1:
+                intf = None
+            else:
+                intf = self._eval_full_type_name(children[1])
+            visitor.visit_override(method_name, intf, visibility)
             
     def _eval_method(self, ast, visitor, name, visibility):
         
@@ -226,7 +235,6 @@ class Interpreter(object):
         attributes = {"visibility": visibility}
         attributes["static"] = props and props["static"] and True or False
         attributes["abstract"] = props and props["abstract"] and True or False
-        attributes["overridden"] = props and props["overridden"] and True or False
         attributes["final"] = props and props["final"] and True or False
         attributes["constructor"] = is_constructor
         

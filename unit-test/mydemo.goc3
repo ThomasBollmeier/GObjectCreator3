@@ -147,20 +147,23 @@ module demo
 		
 		public methods 
 		{
+
 			constructor
 				<- last_name: string [const]
 				<- first_name: string [const]
 				<- id: unsigned integer [const]
 				<-> error: ref(ref(GError));
 				
-			do_something [overridden];
+			override do_something;
+				
 			do_something_else 
 				<- what: integer
 				<-> error: ref(ref(GError))
 				-> boolean;
 			get_team_members [static]
 				-> list(company/Employee);
-		} 
+
+		}
 		
 		protected attributes 
 		{

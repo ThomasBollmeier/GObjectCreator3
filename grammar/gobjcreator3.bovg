@@ -619,16 +619,16 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-method_section = visibility? 'methods' LBRACE m=method* RBRACE;
+method_section = visibility? 'methods' LBRACE elem=(method|override)* RBRACE;
 % method_section {
 res = AstNode(self.getName())
 
 if astNode['visibility']:
 	res.addChild(astNode['visibility'])
 
-for method in astNode.getChildrenById('m'):
-	method.setId('')
-	res.addChild(method)
+for child in astNode.getChildrenById('elem'):
+	child.setId('')
+	res.addChild(child)
 
 return res
 % }
@@ -658,6 +658,7 @@ return AstNode(self.getName(), astNode.getChildren()[0].getText())
 <!----------------------------------------------------------------------------->
 
 method = name=ID method_properties? ( in_param | inout_param | out_param | init_prop )* SEMICOLON;
+
 % method {
 res = AstNode(self.getName())
 
@@ -668,6 +669,25 @@ for child in astNode.getChildren():
 		res.addChild(child) 
 
 return res
+% }
+
+<!----------------------------------------------------------------------------->
+
+override = 'override' method_name=ID ('of' 'ginterface' intf_name=full_type_name)? SEMICOLON;
+
+% override {
+
+res = AstNode(self.getName())
+
+res.addChild(AstNode('name', astNode['#method_name'].getText()))
+
+intf_name = astNode['#intf_name']
+if intf_name:
+	intf_name.setId('')
+	res.addChild(intf_name)
+
+return res
+
 % }
 
 <!----------------------------------------------------------------------------->
@@ -817,7 +837,7 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-method_property = 'static' | 'abstract' | 'overridden' | 'final';
+method_property = 'static' | 'abstract' | 'final';
 % method_property {
 name = astNode.getChildren()[0].getText()
 

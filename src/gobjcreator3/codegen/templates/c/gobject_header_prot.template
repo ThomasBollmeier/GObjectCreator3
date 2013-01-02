@@ -66,15 +66,22 @@ ${class_prefix}_initialize_ (
 	:> endcase
 :> endif
  
-:> for each method in class.methods where method.visibility == PROTECTED do
-	:> if [ isFirst ] then begin
+:> define first = TRUE
+:> for each method_info in class.methods do
+
+	:> define method = method_info[0]
+	:> if [ method.visibility == PROTECTED ] then begin
+	
+		:> if [ first ] then begin
 /*
  * protected methods:
  */
- 	
- 	:> endif	
+ 		:> endif
+ 		
 ${method_result(method)}
-${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});   	
+${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});
+
+	:> endif   	
 
 :> done
 
