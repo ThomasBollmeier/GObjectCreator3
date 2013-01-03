@@ -1,3 +1,5 @@
+${header_comment}
+
 #include <glib-object.h>
 :> edit-section 'other_includes' begin
 /* insert your headers here... */

@@ -1,7 +1,5 @@
+${header_comment}
 :> include "structures.template"
-/*
- * ...Copyright/Licensing information...
- */
  
 :> if [ not is_empty(class.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${CLASS_NAME}_PROT_H__

@@ -1,6 +1,4 @@
-/*
- * ...Copyright/Licensing information...
- */
+${header_comment}
  
 :> if [ not is_empty(enum.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${ENUM_NAME}_H__

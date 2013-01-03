@@ -121,12 +121,14 @@ class CMarshallerGenerator(object):
     """
     
     def __init__(self, 
+                 header_comment,
                  header_guard,
                  func_prefix,
                  signals, 
                  output
                  ):
         
+        self._header_comment = header_comment
         self._header_guard = header_guard
         self._name_creator = CMarshallerNameCreator(func_prefix)
         self._signals = signals
@@ -151,6 +153,7 @@ class CMarshallerGenerator(object):
         res.setEditableSectionStyle(res.Language.C)
         
         res["length"] = len
+        res["header_comment"] = self._header_comment
         res["HEADER_GUARD"] = self._header_guard
         
         marshallers = self._get_marshallers(self._signals)

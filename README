@@ -1,6 +1,6 @@
-GObjectCreator3 (GOC3) is a command-line tool that helps in the development of GObject based applications or libraries. 
+GObjectCreator3 (GOC3) is a command-line tool to support the development of GObject based applications or libraries. 
 The developer provides one ore more meta files that contain the information on the GObject entities to be generated. 
-GOC3 provides a D(omain) S(pecific) L(anguage) for that purpose. The meta files are the processed by GOC3 to generate the relevant C files.
+GOC3 provides a D(omain) S(pecific) L(anguage) for that purpose. GOC3 interprets the meta files and generates the relevant C files.
 
 Call "gobjcreator-3 --help" at the command line to see the available options.
 

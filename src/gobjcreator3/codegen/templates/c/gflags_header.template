@@ -1,0 +1,29 @@
+${header_comment}
+ 
+#ifndef __${CAST_MACRO(flags)}_H__
+#define __${CAST_MACRO(flags)}_H__
+
+#include <glib-object.h>
+
+G_BEGIN_DECLS
+
+typedef enum _${type_name(flags)} {
+:> define shift = 1
+:> for each code in flags.codes do
+	:> if [ not isLast ] then begin
+	${CAST_MACRO(flags)}_${code} = 1 << ${shift},
+	:> else
+	${CAST_MACRO(flags)}_${code} = 1 << ${shift}
+	:> endif
+	:> shift = increment(shift)
+:> done
+} ${type_name(flags)};
+
+GType
+${flags_prefix}_get_type (void);
+
+#define ${TYPE_MACRO(flags)} ${flags_prefix}_get_type()
+
+G_END_DECLS
+
+#endif /* __${CAST_MACRO(flags)}_H__ */

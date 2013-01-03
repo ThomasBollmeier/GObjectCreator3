@@ -79,7 +79,20 @@ class CCodeGenerator(CodeGenerator):
             self._setup_genum_symbols(enum)
             self._gen_enum_header(enum)
             self._gen_enum_source(enum)
-                    
+
+        all_flags = [flags for flags in module.flags if flags.filepath_origin == self._origin]
+        
+        for flags in all_flags:
+            self._setup_gflags_symbols(flags)
+            self._gen_flags_header(flags)
+            self._gen_flags_source(flags)
+            
+        error_domains = [error_domain for error_domain in module.error_domains if error_domain.filepath_origin == self._origin]
+        
+        for error_domain in error_domains:
+            self._setup_gerror_symbols(error_domain)
+            self._gen_error_header(error_domain)
+                                
         self._out.exit_dir(self._cur_dir)
 
         self._dir_stack.pop()
@@ -137,7 +150,13 @@ class CCodeGenerator(CodeGenerator):
         
         class_prefix = self._template_processor.getSymbol("class_prefix")
         signals = obj.get_signals()
-        generator = CMarshallerGenerator(header_guard, class_prefix, signals, self._out)
+        generator = CMarshallerGenerator(
+                                         self._header_comment(),
+                                         header_guard, 
+                                         class_prefix, 
+                                         signals, 
+                                         self._out
+                                         )
         
         header_file_path = self._cur_dir + os.sep
         header_file_path += self._name_creator.create_obj_marshaller_header_name(obj)
@@ -172,6 +191,27 @@ class CCodeGenerator(CodeGenerator):
         
         file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".c"
         lines = self._get_lines_from_template("genum_source.template", file_path)
+        
+        self._create_text_file(file_path, lines)
+
+    def _gen_flags_header(self, flags):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(flags) + ".h"
+        lines = self._get_lines_from_template("gflags_header.template", file_path)
+        
+        self._create_text_file(file_path, lines)
+
+    def _gen_flags_source(self, flags):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(flags) + ".c"
+        lines = self._get_lines_from_template("gflags_source.template", file_path)
+        
+        self._create_text_file(file_path, lines)
+
+    def _gen_error_header(self, error_domain):
+        
+        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(error_domain) + ".h"
+        lines = self._get_lines_from_template("gerror_header.template", file_path)
         
         self._create_text_file(file_path, lines)
         
@@ -216,6 +256,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor.setEditableSectionStyle(self._template_processor.Language.C)
         self._template_processor.setIncludePath([self._template_dir])
                 
+        self._template_processor["header_comment"] = self._header_comment()
         self._template_processor["config"] = self._config
         self._template_processor["TRUE"] = True
         self._template_processor["FALSE"] = False
@@ -227,6 +268,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["type_name"] = self._name_creator.create_full_type_name
         self._template_processor["TYPE_MACRO"] = self._name_creator.create_type_macro
         self._template_processor["CAST_MACRO"] = self._name_creator.create_cast_macro
+        self._template_processor["increment"] = self._increment
         self._template_processor["is_empty"] = self._is_empty
         self._template_processor["is_none"] = self._is_none
         self._template_processor["literal_trim"] = self._literal_trim
@@ -320,6 +362,38 @@ class CCodeGenerator(CodeGenerator):
         if module_prefix:
             prefix = module_prefix + "_" + prefix
         self._template_processor["enum_prefix"] = prefix
+
+    def _setup_gflags_symbols(self, flags):
+        
+        self._template_processor["flags"] = flags
+        
+        prefix = self._name_creator.replace_camel_case(flags.name, "_").lower()
+        module_prefix = self._template_processor.getSymbol("module_prefix")
+        if module_prefix:
+            prefix = module_prefix + "_" + prefix
+        self._template_processor["flags_prefix"] = prefix
+        
+    def _setup_gerror_symbols(self, error_domain):
+        
+        self._template_processor["error_domain"] = error_domain
+
+        prefix = self._name_creator.replace_camel_case(error_domain.name, "_").lower()
+        module_prefix = self._template_processor.getSymbol("module_prefix")
+        if module_prefix:
+            prefix = module_prefix + "_" + prefix
+        self._template_processor["error_domain_prefix"] = prefix
+        
+    def _header_comment(self):
+        
+        return """/*
+ * This file has been automatically generated by GObjectCreator3
+ * (see https://github.com/ThomasBollmeier/GObjectCreator3 for details)
+ */        
+        """
+        
+    def _increment(self, value):
+        
+        return value + 1
         
     def _is_empty(self, data):
         

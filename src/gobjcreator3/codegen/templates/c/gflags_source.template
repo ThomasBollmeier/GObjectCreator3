@@ -1,0 +1,34 @@
+${header_comment}
+
+#include "${filename_wo_suffix(flags)}.h"
+
+GType
+${flags_prefix}_get_type (void)
+{
+
+	static GType gtype = 0;
+	GFlagsValue *values;
+	
+	if (gtype == 0) 
+	{
+		values = g_new (GFlagsValue, ${increment(length(flags.codes))});
+
+		:> define idx = 0		
+		:> for each code in flags.codes do
+		values[${idx}].value = ${CAST_MACRO(flags)}_${code};
+		values[${idx}].value_name = "${code}";
+		values[${idx}].value_nick = "${code}";
+			:> idx = increment(idx)
+        
+		:> done
+		values[${idx}].value = 0;
+		values[${idx}].value_name = NULL;
+		values[${idx}].value_nick = NULL;
+        		
+		gtype = g_flags_register_static ("${type_name(flags)}", values);
+	
+	}
+		
+	return gtype;
+
+}

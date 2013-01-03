@@ -1,7 +1,19 @@
 module geo {
 
 	gobject Location {}
-
+	
+	gerror NavigationError {
+		INVALID_LATITUDE,
+		INVALID_LONGITUDE,
+		GPS_NOT_AVAILABLE
+	}
+	
+	gflags PosDeterm {
+		GPS,
+		IP_ADDRESS,
+		MOBILE
+	}
+	
 }
 
 module base {

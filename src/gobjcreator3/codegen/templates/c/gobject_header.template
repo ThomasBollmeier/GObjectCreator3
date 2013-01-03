@@ -1,6 +1,4 @@
-/*
- * ...Copyright/Licensing information...
- */
+${header_comment}
  
 :> if [ not is_empty(class.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${CLASS_NAME}_H__
@@ -80,13 +78,13 @@ typedef struct _${FullClassName}Class ${FullClassName}Class;
 typedef struct _${FullClassName}Protected ${FullClassName}Protected;
 :> endif
 :> if [ hasPrivAttrs ] then begin
-typedef struct _${FullClassName}Private ${FullClassName}Private;
+typedef struct _${FullClassName}Private   ${FullClassName}Private;
 :> endif
 :> if [ hasProtClassAttrs ] then begin
 typedef struct _${FullClassName}ClsProtected ${FullClassName}ClsProtected;
 :> endif
 :> if [ hasPrivClassAttrs ] then begin
-typedef struct _${FullClassName}ClsPrivate ${FullClassName}ClsPrivate;
+typedef struct _${FullClassName}ClsPrivate   ${FullClassName}ClsPrivate;
 :> endif
 
 struct _${FullClassName}

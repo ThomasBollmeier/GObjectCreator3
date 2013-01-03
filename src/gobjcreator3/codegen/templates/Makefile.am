@@ -3,6 +3,8 @@ templatesdir = $(pythondir)/gobjcreator3/codegen/templates/c
 templates_PYTHON = \
 	c/genum_header.template \
 	c/genum_source.template \
+	c/gflags_header.template \
+	c/gflags_source.template \
 	c/ginterface_header.template \
 	c/ginterface_source.template \
 	c/gobject_header_prot.template \

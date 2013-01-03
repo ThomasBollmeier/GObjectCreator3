@@ -1,6 +1,4 @@
-/*
- * ...Copyright/Licensing information...
- */
+${header_comment}
  
 :> if [ not is_empty(intf.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${INTF_NAME}_H__

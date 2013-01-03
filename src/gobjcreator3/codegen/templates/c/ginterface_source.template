@@ -1,7 +1,4 @@
-:> include "methods.template"
-/*
- * ...Copyright/Licensing information...
- */
+${header_comment}
 
 #include "${filename_wo_suffix(intf)}.h"
 :> edit-section 'source_top' begin
