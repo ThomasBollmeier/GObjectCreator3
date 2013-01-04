@@ -322,11 +322,8 @@ class Interpreter(object):
         aattrs = {"visibility": visibility}
         aattrs["static"] = props and props["static"] and True or False
         
-        type_node = attr.getChildren()[1]
-        if type_node.getName() == "builtin_type":
-            atype = BuiltIn(type_node.getText())
-        else:
-            atype = self._eval_full_type_name(type_node)
+        argtype_node = attr.getChildren()[1]
+        atype = self._eval_arg_type(argtype_node)
         
         visitor.visit_attribute(name, atype, aattrs)
         

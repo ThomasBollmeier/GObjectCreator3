@@ -12,6 +12,13 @@ parser.add_argument(
 				help="GObjectCreator input file"
 				)
 parser.add_argument(
+				"--header-comment-file",
+				dest="header_comment_file",
+				default="",
+				metavar="FILE",
+				help="generate header comment from content of file FILE"
+				)
+parser.add_argument(
 				"--enable-base-functions",
 				action="store_true",
 				dest="enable_base_functions",
@@ -42,6 +49,7 @@ config = CGenConfig()
 config.generate_base_functions = args.enable_base_functions
 config.generate_constructor = args.enable_constructor
 config.verbose = args.verbose
+config.header_text_file = args.header_comment_file
 
 generator = CCodeGenerator(model, args.goc_file, FileOut(args.dir), config) 
 
