@@ -330,6 +330,8 @@ class CompileStep1(AstVisitor):
             super_ = self._get_type(super_class)
             if super_ is None or super_.category != Type.OBJECT:
                 raise Exception("Super type '%s' does not exist or is not a class!" % super_class)
+            if super_.is_final:
+                raise Exception("Final class '%s' cannot be subclassed!" % super_class)
             self._gobject.super_class = super_
         
     def exit_gobject(self):
