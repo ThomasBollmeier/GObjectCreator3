@@ -385,7 +385,7 @@ class CompileStep1(AstVisitor):
         if attributes["abstract"]:
             method.set_abstract()
         
-        if attributes["final"]:
+        if attributes["final"] or self._gobject.is_final:
             method.set_final()
             
         method.parameters = self._get_parameters(name, parameters)

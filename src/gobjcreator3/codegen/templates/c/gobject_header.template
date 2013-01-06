@@ -1,4 +1,5 @@
 ${header_comment}
+:> include "properties.template"
  
 :> if [ not is_empty(class.module) ] then begin
 #ifndef __${MODULE_PREFIX}_${CLASS_NAME}_H__
@@ -176,6 +177,10 @@ ${method_result(method)}
 ${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});
 
 :> done
+
+:> if [ config.generate_setter_getter ] then begin
+	:> paste snippet prop_setters_getters(class, class_prefix, TRUE)		
+:> endif
 
 :> edit-section 'bottom' begin
 /* insert further definitions here... */

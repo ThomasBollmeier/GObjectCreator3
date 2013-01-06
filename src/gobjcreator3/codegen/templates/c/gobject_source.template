@@ -105,7 +105,7 @@ static GObjectClass *${class_prefix}_parent_class = NULL;
 :> done
 
 :> if [ not is_empty(class.get_properties()) ] then begin
-	:> paste snippet prop_setter_getter_decl (class_prefix, class.get_properties())
+	:> paste snippet prop_set_get_decl (class_prefix, class.get_properties())
 :> endif
 
 :> if [ class.has_signals() ] then begin
@@ -432,7 +432,10 @@ ${class_prefix}_finalize (GObject* obj)
 }
 
 :> if [ not is_empty(class.get_properties()) ] then begin
-	:> paste snippet prop_setter_getter_impl(class_prefix, class.get_properties(), 'Class', FullClassName)
+	:> paste snippet prop_set_get_impl(class_prefix, class.get_properties(), 'Class', FullClassName)
+	:> if [ config.generate_setter_getter ] then begin
+		:> paste snippet prop_setters_getters(class, class_prefix, FALSE)
+	:> endif
 :> endif
 
 :> edit-section 'source-bottom' begin

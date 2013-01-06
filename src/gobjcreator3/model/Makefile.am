@@ -1,6 +1,6 @@
 modeldir = $(pythondir)/gobjcreator3/model
 
-model_PYTHON = \
+dist_model_DATA = \
 	attribute.py \
 	clsintf.py \
 	genum.py \

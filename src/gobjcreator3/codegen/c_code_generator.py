@@ -15,7 +15,8 @@ class CGenConfig(object):
     def __init__(self):
         
         self.generate_base_functions = False
-        self.generate_constructor = False 
+        self.generate_constructor = False
+        self.generate_setter_getter = False
         self.verbose = False
         self.header_text_file = "" 
         
@@ -322,6 +323,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["hasProtectedMembers"] = obj.has_protected_members()
         
         self._template_processor["PROP_NAME"] = self._name_creator.create_property_enum_value
+        self._template_processor["prop_tech_name"] = self._name_creator.create_property_tech_name
         self._template_processor["PropType"] = PropType
         self._template_processor["PropAccess"] = PropAccess
         self._template_processor["prop_value"] = self._property_value
@@ -329,6 +331,8 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["prop_flags"] = self._property_flags
         self._template_processor["prop_setter_section"] = self._property_setter_section
         self._template_processor["prop_getter_section"] = self._property_getter_section
+        self._template_processor["prop_set_section"] = self._property_setter_section
+        self._template_processor["prop_get_section"] = self._property_getter_section
         
         self._template_processor["signal_tech_name"] = self._signal_technical_name
         self._template_processor["signal_section_defhandler"] = self._signal_section_defhandler
@@ -684,9 +688,17 @@ class CCodeGenerator(CodeGenerator):
         
     def _property_setter_section(self, prop):
         
-        return "set_" + prop.name.replace("-", "_").lower()
+        return "setter_" + prop.name.replace("-", "_").lower()
 
     def _property_getter_section(self, prop):
+        
+        return "getter_" + prop.name.replace("-", "_").lower()
+
+    def _property_set_section(self, prop):
+        
+        return "set_" + prop.name.replace("-", "_").lower()
+
+    def _property_get_section(self, prop):
         
         return "get_" + prop.name.replace("-", "_").lower()
     

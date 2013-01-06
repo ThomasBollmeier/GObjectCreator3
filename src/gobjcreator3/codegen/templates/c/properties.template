@@ -1,4 +1,4 @@
-:> snippet prop_setter_getter_decl (prefix, properties)
+:> snippet prop_set_get_decl (prefix, properties)
 
 enum 
 {
@@ -29,7 +29,7 @@ ${prefix}_get_property (
 	
 :> endsnippet
 
-:> snippet prop_setter_getter_impl (prefix, properties, TypeCatgName, FullTypeName)
+:> snippet prop_set_get_impl (prefix, properties, TypeCatgName, FullTypeName)
 
 static void
 ${prefix}_set_property (
@@ -53,7 +53,7 @@ ${prefix}_set_property (
 	{
 	:> endif
 	case ${PROP_NAME(prop)}:
-		:> define section_name = prop_setter_section(prop) 
+		:> define section_name = prop_set_section(prop) 
 		:> edit-section section_name begin
 		g_warning("${TypeCatgName} '%s': Setter for property '%s' is not implemented", "${FullTypeName}", "${prop.name}");  
 		:> endedit
@@ -95,7 +95,7 @@ ${prefix}_get_property (
 	{
 	:> endif
 	case ${PROP_NAME(prop)}:
-		:> define section_name = prop_getter_section(prop) 
+		:> define section_name = prop_get_section(prop) 
 		:> edit-section section_name begin
 		g_warning("${TypeCatgName} '%s': Getter for property '%s' is not implemented", "${FullTypeName}", "${prop.name}");
 		:> endedit
@@ -269,5 +269,111 @@ g_object_class_install_properties (gobj_class,
 	NUM_PROPERTIES,
 	${prefix}_properties
 	);
+
+:> endsnippet
+
+:> snippet prop_setters_getters (class, prefix, is_declaration)
+
+	:> define first = TRUE
+
+	:> for each prop in class.get_properties() do
+	
+		:> if [ prop.is_writable() ] then begin
+		
+			:> if [ prop.type <> PropType.OBJECT and prop.type <> PropType.ENUMERATION ] then begin
+		
+				:> if [ first ] then begin
+/* setters and getters: */
+					:> first = FALSE			
+				:> endif
+
+void			
+				:> if [ is_declaration ] then begin 			
+					:> case prop.type in
+						:> PropType.BOOLEAN)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gboolean value);				
+						:> PropType.BYTE)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gchar value);				
+						:> PropType.INTEGER)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gint value);				
+						:> PropType.FLOAT)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gfloat value);				
+						:> PropType.DOUBLE)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gdouble value);				
+						:> PropType.STRING)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, const gchar *value);				
+						:> PropType.POINTER)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gpointer value);				
+					:> endcase
+				:> else
+					:> case prop.type in
+						:> PropType.BOOLEAN)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gboolean value)
+						:> PropType.BYTE)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gchar value)
+						:> PropType.INTEGER)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gint value)
+						:> PropType.FLOAT)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gfloat value)
+						:> PropType.DOUBLE)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gdouble value)
+						:> PropType.STRING)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, const gchar *value)
+						:> PropType.POINTER)
+${prefix}_set_${prop_tech_name(prop)} (${type_name(class)} *self, gpointer value)
+					:> endcase
+{
+	:> define section_name = prop_setter_section(prop)
+	:> edit-section section_name begin
+	/* Add setter implementation here...*/
+	:> endedit
+}									
+				:> endif
+				
+			:> endif
+			
+		:> endif
+
+		:> if [ prop.is_readable() ] then begin
+		
+			:> if [ prop.type <> PropType.OBJECT and prop.type <> PropType.ENUMERATION ] then begin
+
+				:> if [ first ] then begin
+/* setters and getters: */
+					:> first = FALSE			
+				:> endif
+			
+				:> case prop.type in
+					:> PropType.BOOLEAN)
+gboolean				
+					:> PropType.BYTE)
+gchar				
+					:> PropType.INTEGER)
+gint				
+					:> PropType.FLOAT)
+gfloat				
+					:> PropType.DOUBLE)
+gdouble				
+					:> PropType.STRING)
+const gchar * 				
+					:> PropType.POINTER)
+gpointer				
+				:> endcase
+				:> if [ is_declaration ] then begin				
+${prefix}_get_${prop_tech_name(prop)} (${type_name(class)} *self);
+				:> else
+${prefix}_get_${prop_tech_name(prop)} (${type_name(class)} *self) 
+{
+	:> define section_name = prop_getter_section(prop) 
+	:> edit-section section_name begin
+	/* Add getter implementation here...*/
+	:> endedit
+}				
+				:> endif
+			:> endif			
+
+		:> endif
+
+	:> done
 
 :> endsnippet

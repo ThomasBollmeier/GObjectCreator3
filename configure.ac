@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([gobjectcreator3], [0.8.1], [tbollmeier@web.de])
+AC_INIT([gobjectcreator3], [0.8.2], [tbollmeier@web.de])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.11])
@@ -24,6 +24,7 @@ grammar/Makefile
 m4/Makefile
 src/Makefile
 src/gobjcreator3/Makefile
+src/gobjcreator3/__init__.py
 src/gobjcreator3/codegen/Makefile
 src/gobjcreator3/codegen/templates/Makefile
 src/gobjcreator3/model/Makefile

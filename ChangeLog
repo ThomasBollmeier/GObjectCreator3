@@ -1,3 +1,7 @@
+0.8.2:
+
+- new command line option to generate setters and getters for properties with builtin types
+
 0.8.1:
 
 - generation of flags and error domains added 

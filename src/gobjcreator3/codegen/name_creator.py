@@ -123,6 +123,10 @@ class NameCreator(object):
         underscore_name = "PROP_" + underscore_name.upper()
         
         return underscore_name
+    
+    def create_property_tech_name(self, prop):
+        
+        return prop.name.replace("-", "_")
         
     def _create_elem_base_name(self, module_elem):
         
