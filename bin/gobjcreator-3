@@ -18,6 +18,22 @@ parser.add_argument(
 				version=gobjcreator3.VERSION
 				)
 parser.add_argument(
+				"--include-dir",
+				action="append",
+				dest="include_dirs",
+				default=[],
+				metavar="DIR",
+				help="additionally search for includes in directory DIR"
+				)
+parser.add_argument(
+				"--std-include-dir",
+				action="append",
+				dest="std_include_dirs",
+				default=[],
+				metavar="DIR",
+				help="additionally search for standard includes in directory DIR"
+				)
+parser.add_argument(
 				"--header-comment-file",
 				dest="header_comment_file",
 				default="",
@@ -50,19 +66,32 @@ parser.add_argument(
 parser.add_argument("-d", "--dir",
 				default=os.curdir,
 				help="directory where files will be generated in"
-				) 
+				)
+parser.add_argument("--no-module-dirs",
+				action="store_true",
+				dest="no_module_dirs",
+				help="do NOT generate subdirectories per module"
+				)
 
 args = parser.parse_args()
 
 # Compile and generate code:
 
-model = Compiler().compile(args.goc_file)
+compiler = Compiler()
+for incl_dir in args.include_dirs:
+	compiler.add_include_dir(incl_dir)
+for std_incl_dir in args.std_include_dirs:
+	compiler.add_std_include_dir(std_incl_dir)
+
+model = compiler.compile(args.goc_file)
+
 config = CGenConfig()
 config.generate_base_functions = args.enable_base_functions
 config.generate_constructor = args.enable_constructor
 config.generate_setter_getter = args.enable_setter_getter
 config.verbose = args.verbose
 config.header_text_file = args.header_comment_file
+config.directory_per_module = not args.no_module_dirs
 
 generator = CCodeGenerator(model, args.goc_file, FileOut(args.dir), config) 
 

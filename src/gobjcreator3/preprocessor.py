@@ -11,6 +11,14 @@ class PreProcessor(object):
         self._search_dirs_std = self._search_dirs
         self._expanded_asts = {} 
         
+    def add_include_dir(self, dirpath):
+        
+        self._search_dirs.append(dirpath)
+
+    def add_std_include_dir(self, dirpath):
+        
+        self._search_dirs_std.append(dirpath)
+        
     def get_expanded_ast(self, filepath):
         
         ast = self._parser.parseFile(filepath)

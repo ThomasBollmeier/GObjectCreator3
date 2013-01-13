@@ -50,6 +50,9 @@ class FileOut(AbstractOut):
         
         self._root_dir = os.path.abspath(generation_root_dir)
         
+        if not os.path.exists(self._root_dir):
+            os.mkdir(self._root_dir)
+        
     def enter_dir(self, dir_path):
         
         if dir_path:

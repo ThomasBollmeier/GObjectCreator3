@@ -19,6 +19,7 @@ class CGenConfig(object):
         self.generate_setter_getter = False
         self.verbose = False
         self.header_text_file = "" 
+        self.directory_per_module = True
         
 class CCodeGenerator(CodeGenerator):
     
@@ -44,13 +45,15 @@ class CCodeGenerator(CodeGenerator):
         
     def _generate_module(self, module):
         
-        if self._cur_dir:
-            self._cur_dir += os.sep + module.name
-        else:
-            self._cur_dir = module.name
-        self._dir_stack.append(self._cur_dir)
+        if self._config.directory_per_module:
+            
+            if self._cur_dir:
+                self._cur_dir += os.sep + module.name
+            else:
+                self._cur_dir = module.name
+            self._dir_stack.append(self._cur_dir)
         
-        self._out.enter_dir(self._cur_dir)
+            self._out.enter_dir(self._cur_dir)
         
         for m in module.modules:
             self._generate_module(m)
@@ -94,18 +97,20 @@ class CCodeGenerator(CodeGenerator):
         for error_domain in error_domains:
             self._setup_gerror_symbols(error_domain)
             self._gen_error_header(error_domain)
+            
+        if self._config.directory_per_module:
                                 
-        self._out.exit_dir(self._cur_dir)
+            self._out.exit_dir(self._cur_dir)
 
-        self._dir_stack.pop()
-        if self._dir_stack:
-            self._cur_dir = self._dir_stack[-1]
-        else:
-            self._cur_dir = ""
+            self._dir_stack.pop()
+            if self._dir_stack:
+                self._cur_dir = self._dir_stack[-1]
+            else:
+                self._cur_dir = ""
         
     def _gen_object_header(self, obj):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(obj)
+        file_path = self._full_path(self._name_creator.create_obj_header_name(obj))
         lines = self._get_lines_from_template("gobject_header.template", file_path)
                 
         self._create_text_file(file_path, lines)
@@ -115,28 +120,28 @@ class CCodeGenerator(CodeGenerator):
         if not obj.has_protected_members() and obj.is_final:
             return
             
-        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_prot_header_name(obj)
+        file_path = self._full_path(self._name_creator.create_obj_prot_header_name(obj))
         lines = self._get_lines_from_template("gobject_header_prot.template", file_path)
         
         self._create_text_file(file_path, lines)
             
     def _gen_object_source(self, obj):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(obj)
+        file_path = self._full_path(self._name_creator.create_obj_source_name(obj))
         lines = self._get_lines_from_template("gobject_source.template", file_path)
         
         self._create_text_file(file_path, lines)
         
     def _gen_interface_header(self, intf):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_header_name(intf)
+        file_path = self._full_path(self._name_creator.create_obj_header_name(intf))
         lines = self._get_lines_from_template("ginterface_header.template", file_path)
                 
         self._create_text_file(file_path, lines)
 
     def _gen_interface_source(self, intf):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_obj_source_name(intf)
+        file_path = self._full_path(self._name_creator.create_obj_source_name(intf))
         lines = self._get_lines_from_template("ginterface_source.template", file_path)
                 
         self._create_text_file(file_path, lines)
@@ -160,8 +165,7 @@ class CCodeGenerator(CodeGenerator):
                                          self._out
                                          )
         
-        header_file_path = self._cur_dir + os.sep
-        header_file_path += self._name_creator.create_obj_marshaller_header_name(obj)
+        header_file_path = self._full_path(self._name_creator.create_obj_marshaller_header_name(obj))
 
         if self._config.verbose:
             print("generating %s..." % header_file_path, end="")
@@ -171,8 +175,7 @@ class CCodeGenerator(CodeGenerator):
         if self._config.verbose:
             print("done")
 
-        source_file_path = self._cur_dir + os.sep
-        source_file_path += self._name_creator.create_obj_marshaller_source_name(obj)
+        source_file_path = self._full_path(self._name_creator.create_obj_marshaller_source_name(obj))
 
         if self._config.verbose:
             print("generating %s..." % source_file_path, end="")
@@ -184,38 +187,45 @@ class CCodeGenerator(CodeGenerator):
         
     def _gen_enum_header(self, enum):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".h"
+        file_path = self._full_path(self._name_creator.create_filename_wo_suffix(enum) + ".h")
         lines = self._get_lines_from_template("genum_header.template", file_path)
         
         self._create_text_file(file_path, lines)
                 
     def _gen_enum_source(self, enum):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(enum) + ".c"
+        file_path = self._full_path(self._name_creator.create_filename_wo_suffix(enum) + ".c")
         lines = self._get_lines_from_template("genum_source.template", file_path)
         
         self._create_text_file(file_path, lines)
 
     def _gen_flags_header(self, flags):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(flags) + ".h"
+        file_path = self._full_path(self._name_creator.create_filename_wo_suffix(flags) + ".h")
         lines = self._get_lines_from_template("gflags_header.template", file_path)
         
         self._create_text_file(file_path, lines)
 
     def _gen_flags_source(self, flags):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(flags) + ".c"
+        file_path = self._full_path(self._name_creator.create_filename_wo_suffix(flags) + ".c")
         lines = self._get_lines_from_template("gflags_source.template", file_path)
         
         self._create_text_file(file_path, lines)
 
     def _gen_error_header(self, error_domain):
         
-        file_path = self._cur_dir + os.sep + self._name_creator.create_filename_wo_suffix(error_domain) + ".h"
+        file_path = self._full_path(self._name_creator.create_filename_wo_suffix(error_domain) + ".h")
         lines = self._get_lines_from_template("gerror_header.template", file_path)
         
         self._create_text_file(file_path, lines)
+        
+    def _full_path(self, basename):
+        
+        if self._cur_dir:
+            return self._cur_dir + os.sep + basename
+        else:
+            return basename
         
     def _create_text_file(self, file_path, lines):
         

@@ -24,6 +24,14 @@ class Compiler(object):
         
         self._preprocessor = PreProcessor()
         self._interpreter = Interpreter()
+
+    def add_include_dir(self, dirpath):
+        
+        self._preprocessor.add_include_dir(dirpath)
+
+    def add_std_include_dir(self, dirpath):
+        
+        self._preprocessor.add_std_include_dir(dirpath)
         
     def compile(self, filepath):
         

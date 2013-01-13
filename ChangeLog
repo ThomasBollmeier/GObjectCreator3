@@ -1,3 +1,9 @@
+0.8.3:
+
+- new command line options:
+	- suppress creation of subdirectory per module
+	- add directories to list for lookup of normal and standard includes
+
 0.8.2:
 
 - new command line option to generate setters and getters for properties with builtin types
