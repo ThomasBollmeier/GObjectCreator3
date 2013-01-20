@@ -35,10 +35,16 @@ class TestVisitor(AstVisitor):
         self._module_path = []
         self._indent_level = 0
  
-    def enter_module(self, module_name, origin):
+    def enter_module(self, 
+                     module_name,
+                     cfunc_prefix, 
+                     origin):
         
-        self._write("Module: %s [from %s]" % (self._absname(module_name), origin))
-        
+        if not cfunc_prefix:
+            self._write("Module: %s [from %s]" % (self._absname(module_name), origin))
+        else:
+            self._write("Module: %s (Prefix %s) [from %s]" % \
+                        (self._absname(module_name), cfunc_prefix, origin))
         self._module_path.append(module_name)
         self._indent()
         

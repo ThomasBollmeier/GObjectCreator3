@@ -57,9 +57,12 @@ class Interpreter(object):
         
         module_name = ast["name"].getText()
         
+        prefix_node = ast["cfunc_prefix"]
+        cfunc_prefix = prefix_node and prefix_node.getText() or ""
+        
         self._refresh_origin(ast)
                 
-        visitor.enter_module(module_name, self._cur_origin)
+        visitor.enter_module(module_name, cfunc_prefix, self._cur_origin)
 
         for child in ast.getChildren():
             try:

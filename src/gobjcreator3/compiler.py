@@ -71,9 +71,13 @@ class CompileStep0(AstVisitor):
         
         pass
     
-    def enter_module(self, module_name, origin):
+    def enter_module(self, 
+                     module_name,
+                     cfunc_prefix, 
+                     origin):
         
         module = Module(module_name)
+        module.cfunc_prefix = cfunc_prefix
         module.filepath_origin = origin
         
         self._module_stack.append(module)
@@ -313,7 +317,10 @@ class CompileStep1(AstVisitor):
         
         pass
     
-    def enter_module(self, module_name, origin):
+    def enter_module(self, 
+                     module_name,
+                     cfunc_prefix, 
+                     origin):
         
         module = self._module_stack[-1].get_module(module_name)
         self._module_stack.append(module)
@@ -502,7 +509,10 @@ class CompileStep2(AstVisitor):
         
         self._module_stack.pop()
 
-    def enter_module(self, module_name, origin):
+    def enter_module(self, 
+                     module_name,
+                     cfunc_prefix, 
+                     origin):
         
         module = self._module_stack[-1].get_module(module_name)
         self._module_stack.append(module)

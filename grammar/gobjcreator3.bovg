@@ -119,6 +119,7 @@ return AstNode(self.getName(), astNode['#name'].getText())
 
 module = 'module' module_name LBRACE 
 	( 
+	cfunc_prefix |
 	module |
 	type_declaration | 
 	gobject |
@@ -144,6 +145,7 @@ for mname in module_name.getChildren():
 		outer_module.addChild(current_module)
 
 elements = [
+	'cfunc_prefix',
 	'module',
 	'type_declaration',
 	'gobject',

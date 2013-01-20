@@ -309,7 +309,7 @@ class CCodeGenerator(CodeGenerator):
                 
         prefix = self._name_creator.replace_camel_case(camel_case_prefix, "_")
                     
-        self._template_processor["module_prefix"] = prefix.lower()
+        self._template_processor["module_prefix"] = module.cfunc_prefix.lower() or prefix.lower()
         self._template_processor["MODULE_PREFIX"] = prefix.upper() 
         self._template_processor["ModulePrefix"] = camel_case_prefix
         self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix

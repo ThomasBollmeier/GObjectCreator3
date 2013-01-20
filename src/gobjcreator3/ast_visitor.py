@@ -9,7 +9,10 @@ class AstVisitor(object):
     def exit_grammar(self):
         pass
     
-    def enter_module(self, module_name, origin):
+    def enter_module(self, 
+                     module_name,
+                     cfunc_prefix, 
+                     origin):
         pass
     
     def exit_module(self):

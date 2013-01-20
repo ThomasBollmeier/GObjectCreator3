@@ -3577,6 +3577,7 @@ class _ModuleRule(grammar.Rule):
 				outer_module.addChild(current_module)
 		
 		elements = [
+			'cfunc_prefix',
 			'module',
 			'type_declaration',
 			'gobject',
@@ -3626,6 +3627,7 @@ class _ModuleRule(grammar.Rule):
 		branches.append(self._sub_1_4_5())
 		branches.append(self._sub_1_4_6())
 		branches.append(self._sub_1_4_7())
+		branches.append(self._sub_1_4_8())
 		
 		return grammar.zeroToMany(grammar.Fork(branches))
 		
@@ -3635,7 +3637,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_1_1(self):
 		
-		return _ModuleRule()
+		return _CfuncPrefixRule()
 		
 	def _sub_1_4_2(self):
 		
@@ -3643,7 +3645,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_2_1(self):
 		
-		return _TypeDeclarationRule()
+		return _ModuleRule()
 		
 	def _sub_1_4_3(self):
 		
@@ -3651,7 +3653,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_3_1(self):
 		
-		return _GobjectRule()
+		return _TypeDeclarationRule()
 		
 	def _sub_1_4_4(self):
 		
@@ -3659,7 +3661,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_4_1(self):
 		
-		return _GinterfaceRule()
+		return _GobjectRule()
 		
 	def _sub_1_4_5(self):
 		
@@ -3667,7 +3669,7 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_5_1(self):
 		
-		return _GerrorRule()
+		return _GinterfaceRule()
 		
 	def _sub_1_4_6(self):
 		
@@ -3675,13 +3677,21 @@ class _ModuleRule(grammar.Rule):
 		
 	def _sub_1_4_6_1(self):
 		
-		return _GenumRule()
+		return _GerrorRule()
 		
 	def _sub_1_4_7(self):
 		
 		return self._sub_1_4_7_1()
 		
 	def _sub_1_4_7_1(self):
+		
+		return _GenumRule()
+		
+	def _sub_1_4_8(self):
+		
+		return self._sub_1_4_8_1()
+		
+	def _sub_1_4_8_1(self):
 		
 		return _GflagsRule()
 		

@@ -1,4 +1,6 @@
-module geo {
+module geography {
+
+	cfunc-prefix geo;
 
 	gobject Location {}
 	
@@ -64,7 +66,7 @@ module base {
 		methods {
 	
 			goto
-				<- location: geo/Location;
+				<- location: geography/Location;
 				
 		} 
 	

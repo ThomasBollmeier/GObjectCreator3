@@ -27,6 +27,7 @@ class Module(ModuleElement):
         
         ModuleElement.__init__(self, name)
         
+        self.cfunc_prefix = ""
         self._elements = []
         self._elements_d = {}
 
