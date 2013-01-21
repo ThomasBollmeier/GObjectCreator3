@@ -172,6 +172,12 @@ gobject Human [final] {
 				
 	}
 	
+	private methods {
+	
+		whisper;
+	
+	}
+	
 	private attributes {
 		
 		first_name: string;

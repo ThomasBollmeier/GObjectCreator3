@@ -67,6 +67,19 @@ ${header_comment}
 static ${FullClassName}Class *${class_prefix}_class = NULL;
 static GObjectClass *${class_prefix}_parent_class = NULL; 
 
+:> for each method_info in class.methods where method_info[0].visibility == PRIVATE do
+	:> if [ isFirst ] then begin
+/* 
+ * private methods (declaration):
+ */
+ 
+ 	:> endif
+ 	:> define method = method_info[0]
+static ${method_result(method)}
+${class_prefix}_${method.name} (${method_signature(class, method, supress_param_names, insert_line_breaks, indent_level)});
+
+:> done
+
 :> edit-section 'source-after-typedecl' begin
 /* ... */
 :> endedit
@@ -238,8 +251,10 @@ ${class_prefix}_instance_init (
 	gpointer klass)
 {
 
+:> if [ hasProtAttrs or hasPrivAttrs ] then begin
 	${FullClassName} *self = ${CAST_MACRO(class)} (instance);
-
+:> endif
+	
 :> if [ hasProtAttrs ] then begin
 	self->prot = g_new (${FullClassName}Protected, 1);
 :> endif
