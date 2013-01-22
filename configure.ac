@@ -6,15 +6,19 @@ AM_INIT_AUTOMAKE([1.11])
 AM_SILENT_RULES([yes])
 AM_PATH_PYTHON([3.2])
 
-# Checks for programs.
+# Dependencies:
 
-# Checks for libraries.
+GOC3_CHECK_FOR_BOVINUS(
+	[1.6.10],
+	[$srcdir/m4/bovinus_check.sh]
+	)
 
-# Checks for header files.
+GOC3_CHECK_FOR_FABERSCRIPTORUM(
+	[1.1.0],
+	[$srcdir/m4/faberscriptorum_check.sh]
+	)
 
-# Checks for typedefs, structures, and compiler characteristics.
-
-# Checks for library functions.
+# ------------
 
 AC_OUTPUT([
 Makefile
