@@ -117,7 +117,7 @@ ${class_prefix}_${method.name} (${method_signature(class, method, supress_param_
 
 :> done
 
-:> if [ not is_empty(class.get_properties()) ] then begin
+:> if [ is_prop_init_required(class) ] then begin
 	:> paste snippet prop_set_get_decl (class_prefix, class.get_properties())
 :> endif
 
@@ -231,7 +231,7 @@ ${class_prefix}_class_init (
 	g_type_class_add_private (klass, sizeof (${FullClassName}Private));
 :> endif
 
-:> if [ not is_empty(class.get_properties()) ] then begin
+:> if [ is_prop_init_required(class) ] then begin
 	:> paste snippet prop_class_init(class_prefix, class.get_properties()) indent by 1
 :> endif
 
@@ -446,7 +446,7 @@ ${class_prefix}_finalize (GObject* obj)
 
 }
 
-:> if [ not is_empty(class.get_properties()) ] then begin
+:> if [ is_prop_init_required(class) ] then begin
 	:> paste snippet prop_set_get_impl(class_prefix, class.get_properties(), 'Class', FullClassName)
 	:> if [ config.generate_setter_getter ] then begin
 		:> paste snippet prop_setters_getters(class, class_prefix, FALSE)

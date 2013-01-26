@@ -478,7 +478,8 @@ class CompileStep1(AstVisitor):
                         default
                         )   
         
-        self._gobject.add_property(prop)  
+        parent = self._gobject or self._ginterface
+        parent.add_property(prop)
         
     def visit_signal(self,
                      name,
@@ -486,11 +487,16 @@ class CompileStep1(AstVisitor):
                      has_default_handler
                      ):
         
+        if has_default_handler and self._ginterface:
+            raise Exception("Signal '%s': default handlers are not allowed for interface signals" % name)
+        
         signal = Signal(name, 
                         self._get_parameters(name, parameters),
                         has_default_handler
                         )
-        self._gobject.add_signal(signal)
+        
+        parent = self._gobject or self._ginterface 
+        parent.add_signal(signal)
 
 class CompileStep2(AstVisitor):
     

@@ -3400,6 +3400,8 @@ class _GinterfaceRule(grammar.Rule):
 		branches = []
 		branches.append(self._sub_1_4_1())
 		branches.append(self._sub_1_4_2())
+		branches.append(self._sub_1_4_3())
+		branches.append(self._sub_1_4_4())
 		
 		return grammar.zeroToMany(grammar.Fork(branches))
 		
@@ -3418,6 +3420,22 @@ class _GinterfaceRule(grammar.Rule):
 	def _sub_1_4_2_1(self):
 		
 		return _MethodSectionRule('elem')
+		
+	def _sub_1_4_3(self):
+		
+		return self._sub_1_4_3_1()
+		
+	def _sub_1_4_3_1(self):
+		
+		return _PropertiesRule('elem')
+		
+	def _sub_1_4_4(self):
+		
+		return self._sub_1_4_4_1()
+		
+	def _sub_1_4_4_1(self):
+		
+		return _SignalsRule('elem')
 		
 	def _sub_1_5(self):
 		

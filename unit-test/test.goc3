@@ -69,6 +69,24 @@ module base {
 				<- location: geography/Location;
 				
 		} 
+
+	    properties {
+	    
+	    	current-location {
+	    		description = "current location",
+	    		access = read,
+	    		type = object,
+	    		gtype = gtypeof(geography/Location)
+	    	}
+	    
+	    }
+	    
+	    signals {
+	    
+	    	location-reached
+	    		<- location: geography/Location;
+	    
+	    }
 	
 	}
 

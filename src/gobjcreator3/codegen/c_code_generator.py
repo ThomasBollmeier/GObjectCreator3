@@ -6,6 +6,7 @@ from gobjcreator3.model.type import Type
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.method import Parameter
 from gobjcreator3.model.property import PropType, PropAccess
+from gobjcreator3.model.ginterface import GInterface
 import os
 import re
 import faberscriptorum
@@ -77,6 +78,8 @@ class CCodeGenerator(CodeGenerator):
             self._setup_ginterface_symbols(intf)
             self._gen_interface_header(intf)
             self._gen_interface_source(intf)
+            if intf.signals:
+                self._gen_object_marshallers(intf)
             
         enums = [enum for enum in module.enumerations if enum.filepath_origin == self._origin]
         
@@ -146,26 +149,34 @@ class CCodeGenerator(CodeGenerator):
                 
         self._create_text_file(file_path, lines)
         
-    def _gen_object_marshallers(self, obj):
+    def _gen_object_marshallers(self, clif):
+        
+        is_interface = isinstance(clif, GInterface)
         
         header_guard = "__"
         modprefix = self._template_processor.getSymbol("MODULE_PREFIX")
         if modprefix:
             header_guard += modprefix + "_"
-        header_guard += self._template_processor.getSymbol("CLASS_NAME")
+        if not is_interface:
+            header_guard += self._template_processor.getSymbol("CLASS_NAME")
+        else:
+            header_guard += self._template_processor.getSymbol("INTF_NAME")
         header_guard += "_MARSHALLER_H__"
         
-        class_prefix = self._template_processor.getSymbol("class_prefix")
-        signals = obj.get_signals()
+        if not is_interface:
+            prefix = self._template_processor.getSymbol("class_prefix")
+        else:
+            prefix = self._template_processor.getSymbol("intf_prefix")
+        signals = clif.get_signals()
         generator = CMarshallerGenerator(
                                          self._header_comment(),
-                                         header_guard, 
-                                         class_prefix, 
+                                         header_guard,
+                                         prefix,
                                          signals, 
                                          self._out
                                          )
         
-        header_file_path = self._full_path(self._name_creator.create_obj_marshaller_header_name(obj))
+        header_file_path = self._full_path(self._name_creator.create_obj_marshaller_header_name(clif))
 
         if self._config.verbose:
             print("generating %s..." % header_file_path, end="")
@@ -175,7 +186,7 @@ class CCodeGenerator(CodeGenerator):
         if self._config.verbose:
             print("done")
 
-        source_file_path = self._full_path(self._name_creator.create_obj_marshaller_source_name(obj))
+        source_file_path = self._full_path(self._name_creator.create_obj_marshaller_source_name(clif))
 
         if self._config.verbose:
             print("generating %s..." % source_file_path, end="")
@@ -343,6 +354,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["prop_getter_section"] = self._property_getter_section
         self._template_processor["prop_set_section"] = self._property_setter_section
         self._template_processor["prop_get_section"] = self._property_getter_section
+        self._template_processor["is_prop_init_required"] = self._is_property_init_required
         
         self._template_processor["signal_tech_name"] = self._signal_technical_name
         self._template_processor["signal_section_defhandler"] = self._signal_section_defhandler
@@ -365,6 +377,12 @@ class CCodeGenerator(CodeGenerator):
         if module_prefix:
             prefix = module_prefix + "_" + prefix
         self._template_processor["intf_prefix"] = prefix
+
+        if intf.signals:
+            self._marshaller_names = CMarshallerNameCreator(prefix)
+            self._template_processor["marshaller_func"] = self._marshaller_names.create_marshaller_name
+        else:
+            self._marshaller_names = None
         
     def _setup_genum_symbols(self, enum):
         
@@ -721,3 +739,14 @@ class CCodeGenerator(CodeGenerator):
         intf_name = self._name_creator.replace_camel_case(name, "_").lower()
         
         return intf_name + "_" + method_name
+    
+    def _is_property_init_required(self, obj):
+        
+        if obj.get_properties():
+            return True
+        
+        for intf in obj.interfaces:
+            if intf.properties:
+                return True
+        
+        return False

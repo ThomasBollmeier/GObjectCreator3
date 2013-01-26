@@ -1,15 +1,43 @@
 ${header_comment}
+:> include "properties.template"
+:> include "signals.template"
 
 #include "${filename_wo_suffix(intf)}.h"
+:> if [ not is_empty(intf.signals) ] then begin
+	:> define hasSignals = TRUE
+#include "${marshaller_header(intf)}"	
+:> else
+	:> define hasSignals = FALSE
+:> endif
+
 :> edit-section 'source_top' begin
 /* further includes... */
 :> endedit
 
 G_DEFINE_INTERFACE (${type_name(intf)}, ${intf_prefix}, 0)
 
+:> if [ not is_empty(intf.signals) ] then begin
+	:> paste snippet signal_def_and_handlers (intf_prefix, intf, intf.signals)
+:> endif
+
 static void
 ${intf_prefix}_default_init (${type_name(intf)}Interface *intfClass) 
 {
+	:> if [ not is_empty(intf.properties) ] then begin
+	GParamSpec *param_spec;
+	:> endif
+	:> if [ not is_empty(intf.signals) ] then begin
+	GClosure *default_closure;
+	:> endif
+	
+	:> if [ not is_empty(intf.properties) ] then begin
+		:> paste snippet prop_interface_init(intf.properties, "param_spec", "intfClass") indent by 1
+	:> endif
+	
+	:> if [ not is_empty(intf.signals) ] then begin
+		:> paste snippet signal_registration (intf_prefix, intf.signals) indent by 1
+	:> endif
+	
 	:> edit-section 'default_init' begin
 	/* insert custom code for interface initialization here ... */
 	:> endedit 

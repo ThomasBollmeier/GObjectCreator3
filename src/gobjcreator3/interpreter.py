@@ -150,8 +150,14 @@ class Interpreter(object):
                 
         visitor.enter_ginterface(name, cfunc_prefix, self._cur_origin)
         
-        for method_section in ast.getChildrenByName("method_section"):
-            self._eval_method_section(method_section, visitor, interface_name=name)
+        for child in ast.getChildren():
+            child_name = child.getName()
+            if child_name == "method_section":
+                self._eval_method_section(child, visitor, interface_name=name)
+            elif child_name == "properties":
+                self._eval_properties(child, visitor)
+            elif child_name == "signals":
+                self._eval_signals(child, visitor)
                     
         visitor.exit_ginterface()
         

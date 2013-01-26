@@ -210,7 +210,10 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-ginterface = 'ginterface' name=ID LBRACE elem=(cfunc_prefix | method_section)* RBRACE;
+ginterface = 'ginterface' name=ID LBRACE 
+	elem=(cfunc_prefix | method_section | properties | signals)* 
+RBRACE;
+	
 % ginterface {
 res = AstNode(self.getName())
 		
@@ -223,8 +226,6 @@ for element in astNode.getChildrenById('elem'):
 				
 return res
 % }
-
-<!----------------------------------------------------------------------------->
 
 
 
