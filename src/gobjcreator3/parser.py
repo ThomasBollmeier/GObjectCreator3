@@ -280,6 +280,8 @@ class _PropTypeRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'prop_type', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -398,6 +400,8 @@ class _ParamPropertyRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'param_property', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -420,6 +424,8 @@ class _PropAccessModeRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'prop_access_mode', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -499,6 +505,8 @@ class _BooleanLiteralRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'boolean_literal', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -531,6 +539,8 @@ class _ModuleNameRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'module_name', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -585,6 +595,8 @@ class _AttrPropertyRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'attr_property', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -608,6 +620,8 @@ class _GflagsRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'gflags', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -683,6 +697,8 @@ class _GobjectPropRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'gobject_prop', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -715,6 +731,8 @@ class _FilePathRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'file_path', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -782,6 +800,8 @@ class _CfuncPrefixRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'cfunc_prefix', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -828,6 +848,8 @@ class _NumberRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'number', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -904,6 +926,8 @@ class _BuiltinTypeRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'builtin_type', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -986,6 +1010,8 @@ class _VisibilityRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'visibility', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1025,6 +1051,8 @@ class _NameWDashesRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'name_w_dashes', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1075,6 +1103,8 @@ class _TypeDeclarationRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'type_declaration', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1112,6 +1142,8 @@ class _PropDescriptionRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'prop_description', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1148,6 +1180,8 @@ class _EnumCodeRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'enum_code', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1203,6 +1237,8 @@ class _GerrorRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'gerror', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1277,6 +1313,8 @@ class _FullTypeNameRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'full_type_name', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1400,6 +1438,8 @@ class _MethodPropertyRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'method_property', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1441,6 +1481,8 @@ class _OverrideRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'override', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1514,6 +1556,8 @@ class _InclpathRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'inclpath', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1569,6 +1613,8 @@ class _PropGtypeRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'prop_gtype', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1657,6 +1703,8 @@ class _TypeNameRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'type_name', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1687,6 +1735,8 @@ class _GobjectPropsRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'gobject_props', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1752,6 +1802,8 @@ class _MethodPropertiesRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'method_properties', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1815,6 +1867,8 @@ class _GenumRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'genum', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -1891,6 +1945,8 @@ class _PropAccessModesRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'prop_access_modes', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -1940,6 +1996,8 @@ class _ParamPropertiesRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'param_properties', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2005,6 +2063,8 @@ class _CodeValueRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'code_value', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2050,6 +2110,8 @@ class _AttrPropertiesRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'attr_properties', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2114,6 +2176,8 @@ class _InitPropRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'init_prop', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2192,6 +2256,8 @@ class _ImplementsStmtRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'implements_stmt', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2254,6 +2320,8 @@ class _InheritsStmtRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'inherits_stmt', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2300,6 +2368,8 @@ class _PropAccessRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'prop_access', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2337,6 +2407,8 @@ class _IncludeStmtRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'include_stmt', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2399,6 +2471,8 @@ class _PropValueRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'prop_value', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2516,6 +2590,8 @@ class _ArgtypeRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'argtype', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2592,6 +2668,8 @@ class _InParamRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'in_param', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2662,6 +2740,8 @@ class _InoutParamRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'inout_param', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2715,6 +2795,8 @@ class _PropContentRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'prop_content', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2774,6 +2856,8 @@ class _AttributeRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'attribute', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2831,6 +2915,8 @@ class _OutParamRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'out_param', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -2873,6 +2959,8 @@ class _SignalRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'signal', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -2968,6 +3056,8 @@ class _MethodRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'method', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -3054,6 +3144,8 @@ class _AttrSectionRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'attr_section', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -3106,6 +3198,8 @@ class _PropertyRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'property', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -3189,6 +3283,8 @@ class _SignalsRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'signals', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -3235,6 +3331,8 @@ class _PropertiesRule(grammar.Rule):
 	
 		grammar.Rule.__init__(self, 'properties', ident)
 		
+		self.setContextIndependent()
+		
 	def expand(self, start, end, context):
 		
 		start.connect(self._sub_1()).connect(end)
@@ -3280,6 +3378,8 @@ class _MethodSectionRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'method_section', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -3354,6 +3454,8 @@ class _GinterfaceRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'ginterface', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -3446,6 +3548,8 @@ class _GobjectRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'gobject', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		
@@ -3574,6 +3678,8 @@ class _ModuleRule(grammar.Rule):
 	def __init__(self, ident=''):
 	
 		grammar.Rule.__init__(self, 'module', ident)
+		
+		self.setContextIndependent()
 		
 	def expand(self, start, end, context):
 		

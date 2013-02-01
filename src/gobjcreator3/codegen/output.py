@@ -21,6 +21,12 @@ class AbstractOut(object):
         
         pass
     
+class NullOut(AbstractOut):
+    
+    def __init__(self):
+        
+        AbstractOut.__init__(self)
+    
 class StdOut(AbstractOut):
     
     def __init__(self):

@@ -6,4 +6,5 @@ EXTRA_DIST = \
 	mydemo.goc3 \
 	mytypes.goc3 \
 	parser_test.py \
+	performance_test.py \
 	test.goc3

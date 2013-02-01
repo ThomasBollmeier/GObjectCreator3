@@ -320,7 +320,7 @@ class CCodeGenerator(CodeGenerator):
                 
         prefix = self._name_creator.replace_camel_case(camel_case_prefix, "_")
                     
-        self._template_processor["module_prefix"] = module.cfunc_prefix.lower() or prefix.lower()
+        self._template_processor["module_prefix"] = self._module_prefix(module)
         self._template_processor["MODULE_PREFIX"] = prefix.upper() 
         self._template_processor["ModulePrefix"] = camel_case_prefix
         self._template_processor["filename_wo_suffix"] = self._name_creator.create_filename_wo_suffix
@@ -500,12 +500,11 @@ class CCodeGenerator(CodeGenerator):
             res = method_or_name
         
         if intf:
-            if cls.module == intf.module:
-                name = intf.name
-            else:
-                name = self._name_creator.create_full_type_name(intf)
-            intf_name = self._name_creator.replace_camel_case(name, "_").lower()
-            res = intf_name + "_" + res 
+            method_prefix = intf.cfunc_prefix or intf.name.lower()
+            mod_prefix = self._module_prefix_relative(intf.module, cls.module)
+            if mod_prefix:
+                method_prefix = mod_prefix + "_" + method_prefix 
+            res = method_prefix + "_" + res 
         
         return res
                     
@@ -732,13 +731,12 @@ class CCodeGenerator(CodeGenerator):
     
     def _interface_impl_funcname(self, cls, intf, method_name):
         
-        if cls.module == intf.module:
-            name = intf.name
-        else:
-            name = self._name_creator.create_full_type_name(intf)
-        intf_name = self._name_creator.replace_camel_case(name, "_").lower()
+        method_prefix = intf.cfunc_prefix or intf.name.lower()
+        module_predix = self._module_prefix_relative(intf.module, cls.module)
+        if module_predix:
+            method_prefix = module_predix + "_" + method_prefix
         
-        return intf_name + "_" + method_name
+        return method_prefix + "_" + method_name
     
     def _is_property_init_required(self, obj):
         
@@ -750,3 +748,49 @@ class CCodeGenerator(CodeGenerator):
                 return True
         
         return False
+    
+    def _module_prefix(self, module):
+        
+        res = module.cfunc_prefix or module.name.lower()
+        
+        curmod = module
+        while curmod.module:
+            curmod = curmod.module
+            tmp = curmod.cfunc_prefix or curmod.name.lower()
+            if tmp:
+                res = tmp + "_" + res
+        
+        return res
+    
+    def _module_prefix_relative(self, module, root):
+        
+        res = ""
+        
+        abspath_module = self._get_abs_module_path(module)
+        abspath_root = self._get_abs_module_path(root)
+        len_rootpath = len(abspath_root)
+
+        relpath = []
+        
+        for idx, m in enumerate(abspath_module):
+            if not relpath and idx < len_rootpath and m == abspath_root[idx]:
+                continue
+            relpath.append(m)
+            
+        for m in relpath:
+            if res:
+                res += "_"
+            res += m.cfunc_prefix or m.name.lower()
+                
+        return res
+            
+    def _get_abs_module_path(self, module):
+        
+        res = [module]
+        curmod = module
+        while curmod.module:
+            curmod = curmod.module
+            res.insert(0, curmod)
+                        
+        return res
+        
