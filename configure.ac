@@ -9,7 +9,7 @@ AM_PATH_PYTHON([3.2])
 # Dependencies:
 
 GOC3_CHECK_FOR_BOVINUS(
-	[1.6.10],
+	[1.6.11],
 	[$srcdir/m4/bovinus_check.sh]
 	)
 
