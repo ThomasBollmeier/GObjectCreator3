@@ -816,11 +816,84 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-param_property = 'const';
+param_property = const='const' | introspection_prop; 
 
 % param_property {
-name = astNode.getChildren()[0].getText()
-return AstNode(name)
+
+child = astNode.getChildren()[0]
+if child.getId() == 'const':
+	res = AstNode(child.getText())
+else:
+	res = child
+
+return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+introspection_prop = 
+	ispec_prop_transfer | 
+	ispec_out_allocation |
+	ispec_allow_none |
+	ispec_callback |
+	ispec_user_data 
+	;
+
+% introspection_prop {
+
+return astNode.getChildren()[0]
+
+% } 
+
+<!----------------------------------------------------------------------------->
+
+ispec_prop_transfer = 'transfer' DASH value=('none'|'container'|'full');
+% ispec_prop_transfer {
+
+return AstNode('transfer', astNode['#value'].getText())
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_out_allocation = ('caller'|'callee') DASH 'allocates';
+% ispec_out_allocation {
+
+return AstNode('out_alloc', astNode.getChildren()[0].getText())
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_allow_none = 'allow' DASH 'none';
+% ispec_allow_none {
+
+return AstNode('allow_none')
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_callback = 'callback' ( LPAR 'user' DASH 'data' ASSIGN param_name=ID RPAR );
+% ispec_callback {
+
+res = AstNode('callback')
+param_name = astNode['#param_name']
+if param_name:
+	res.addChild(AstNode('user_data', param_name.getText()))
+
+return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_user_data = 'user' DASH 'data';
+% ispec_user_data {
+
+return AstNode('user_data')
+
 % }
 
 <!----------------------------------------------------------------------------->

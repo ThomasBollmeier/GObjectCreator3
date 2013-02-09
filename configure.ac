@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([gobjectcreator3], [0.8.5], [tbollmeier@web.de])
+AC_INIT([gobjectcreator3], [0.9.0], [tbollmeier@web.de])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([1.11])

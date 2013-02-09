@@ -16,6 +16,23 @@ module geography {
 		MOBILE
 	}
 	
+	typedecl RouteCallback;
+	
+	ginterface Route {
+	
+		methods {
+		
+			create
+				<- callback: RouteCallback [callback(user-data=user_data)] 
+				<- user_data: any [allow-none];
+		
+			get_way_points
+				-> list(Location) [transfer-full, callee-allocates];
+		
+		}
+	
+	}
+	
 }
 
 module base {
@@ -66,7 +83,7 @@ module base {
 		methods {
 	
 			goto
-				<- location: geography/Location;
+				<- location: geography/Location [const, transfer-none];
 				
 		} 
 
