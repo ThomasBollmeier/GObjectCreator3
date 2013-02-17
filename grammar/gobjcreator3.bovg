@@ -227,8 +227,6 @@ for element in astNode.getChildrenById('elem'):
 return res
 % }
 
-
-
 <!----------------------------------------------------------------------------->
 
 gerror = 'gerror' name=ID LBRACE 
@@ -837,7 +835,8 @@ introspection_prop =
 	ispec_out_allocation |
 	ispec_allow_none |
 	ispec_callback |
-	ispec_user_data 
+	ispec_user_data |
+	ispec_array
 	;
 
 % introspection_prop {
@@ -875,13 +874,13 @@ return AstNode('allow_none')
 
 <!----------------------------------------------------------------------------->
 
-ispec_callback = 'callback' ( LPAR 'user' DASH 'data' ASSIGN param_name=ID RPAR );
+ispec_callback = 'callback' ( LPAR add=callback_addition (COMMA add=callback_addition)* RPAR )?;
 % ispec_callback {
 
 res = AstNode('callback')
-param_name = astNode['#param_name']
-if param_name:
-	res.addChild(AstNode('user_data', param_name.getText()))
+for child in astNode.getChildrenById('add'):
+	child.setId('')
+	res.addChild(child)
 
 return res
 
@@ -889,10 +888,55 @@ return res
 
 <!----------------------------------------------------------------------------->
 
+callback_addition = 
+	'user' DASH 'data' DASH 'param' ASSIGN param_name=ID |
+	'scope' ASSIGN scope=('call'|'async'|'notified')
+	;
+	
+% callback_addition {
+
+param = astNode['#param_name']
+if param:
+	return AstNode('user_data_param', param.getText())
+else:	
+	return AstNode('scope', astNode['#scope'].getText()) 
+
+% }	
+
+<!----------------------------------------------------------------------------->
+
 ispec_user_data = 'user' DASH 'data';
 % ispec_user_data {
 
 return AstNode('user_data')
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_array = 'array' ( LPAR 
+	( 'fixed' DASH 'size' ASSIGN fixed_size=NUMBER |
+	  'length' DASH 'param' ASSIGN length_param=ID |
+	  zero='zero' DASH 'terminated' )?
+RPAR )?;
+
+% ispec_array {
+
+res = AstNode('array')
+
+fixed_size = astNode['#fixed_size']
+if fixed_size:
+	res.addChild(AstNode('fixed_size', fixed_size.getText()))
+	
+length_param = astNode['#length_param']
+if length_param:
+	res.addChild(AstNode('length_param', length_param.getText()))
+
+zero_terminated = astNode['#zero']
+if zero_terminated:
+	res.addChild(AstNode('zero_terminated'))
+
+return res
 
 % }
 

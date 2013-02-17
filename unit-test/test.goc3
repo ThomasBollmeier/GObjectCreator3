@@ -23,11 +23,16 @@ module geography {
 		methods {
 		
 			create
-				<- callback: RouteCallback [callback(user-data=user_data)] 
+				<- callback: RouteCallback [callback(user-data-param=user_data,
+					scope=notified)] 
 				<- user_data: any [allow-none];
 		
 			get_way_points
 				-> list(Location) [transfer-full, callee-allocates];
+				
+			set_way_points
+				<- num_points: integer
+				<- points: list(Location) [const, array(length-param=num_points)];
 		
 		}
 	
