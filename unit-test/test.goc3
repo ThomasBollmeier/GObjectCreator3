@@ -32,7 +32,11 @@ module geography {
 				
 			set_way_points
 				<- num_points: integer
-				<- points: list(Location) [const, array(length-param=num_points)];
+				<- points: list(Location) [
+					const, 
+					array(length-param=num_points),
+					array-element(type=geography/Location)
+					];
 		
 		}
 	

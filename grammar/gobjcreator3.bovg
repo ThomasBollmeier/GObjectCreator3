@@ -836,7 +836,8 @@ introspection_prop =
 	ispec_allow_none |
 	ispec_callback |
 	ispec_user_data |
-	ispec_array
+	ispec_array |
+	ispec_array_element
 	;
 
 % introspection_prop {
@@ -935,6 +936,36 @@ if length_param:
 zero_terminated = astNode['#zero']
 if zero_terminated:
 	res.addChild(AstNode('zero_terminated'))
+
+return res
+
+% }
+
+<!----------------------------------------------------------------------------->
+
+ispec_array_element = 
+	'array' DASH 'element' LPAR ( 
+		'type' ASSIGN type=type_name |
+		'key' DASH 'type' ASSIGN key_type=type_name COMMA
+		'value' DASH 'type' ASSIGN value_type=type_name
+		) RPAR;
+	
+% ispec_array_element {
+
+res = AstNode('array_element')
+
+typeNode = astNode['#type']
+if typeNode:
+	typeNode.setId('')
+	res.addChild(typeNode)
+
+keyTypeNode = astNode['#key_type']
+if keyTypeNode:
+	keyTypeNode.setId('')
+	res.addChild(keyTypeNode)
+	valTypeNode = astNode['#value_type']
+	valTypeNode.setId('')
+	res.addChild(valTypeNode)
 
 return res
 
