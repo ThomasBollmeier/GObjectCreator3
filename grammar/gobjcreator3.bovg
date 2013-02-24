@@ -988,11 +988,23 @@ return res
 
 <!----------------------------------------------------------------------------->
 
-method_property = 'static' | 'abstract' | 'final';
+method_property = 'static' | 'abstract' | 'final' | ispec=ispec_meth_property;
 % method_property {
-name = astNode.getChildren()[0].getText()
+child = astNode.getChildren()[0]
+if not child.getId(): 
+	name = child.getText()
+	return AstNode(name)
+else:
+	child.setId('')
+	return child
+% }
 
-return AstNode(name)
+<!----------------------------------------------------------------------------->
+
+ispec_meth_property = 'skip';
+
+% ispec_meth_property {
+	return AstNode('skip')
 % }
 
 <!----------------------------------------------------------------------------->

@@ -30,13 +30,15 @@ module geography {
 			get_way_points
 				-> list(Location) [transfer-full, callee-allocates];
 				
-			set_way_points
+			set_way_points 
 				<- num_points: integer
 				<- points: list(Location) [
 					const, 
 					array(length-param=num_points),
 					array-element(type=geography/Location)
 					];
+					
+			dummy [skip];
 		
 		}
 	
