@@ -2,7 +2,7 @@ from gobjcreator3.model.visibility import Visibility
 
 class Method(object):
     
-    def __init__(self, name):
+    def __init__(self, name, ispec_data=None):
         
         self.name = name
         self.visibility = Visibility.PRIVATE
@@ -11,6 +11,8 @@ class Method(object):
         self.is_final = False
         
         self.parameters = []
+        
+        self.ispec_data = ispec_data
         
     def set_static(self, is_static=True):
         
@@ -52,9 +54,9 @@ class Method(object):
         
 class ConstructorMethod(Method):
     
-    def __init__(self):
+    def __init__(self, ispec_data=None):
         
-        Method.__init__(self, "")
+        Method.__init__(self, "", ispec_data)
 
         self.is_static = True
         self.is_abstract = False
@@ -80,18 +82,31 @@ class Parameter(object):
     OUT = 2
     IN_OUT = 3
     
-    def __init__(self, name, type_, direction=IN):
+    def __init__(self, 
+                 name, 
+                 type_, 
+                 direction=IN,
+                 ispec_data=None
+                 ):
         
         self.name = name
         self.type = type_
         self.direction = direction
         self.modifiers = []
         
+        self.ispec_data = ispec_data
+        
 class ConstructorParam(Parameter):
     
-    def __init__(self, name, type_, direction, bind_to_property):
+    def __init__(self, 
+                 name, 
+                 type_, 
+                 direction, 
+                 bind_to_property,
+                 ispec_data=None
+                 ):
         
-        Parameter.__init__(self, name, type_, direction)
+        Parameter.__init__(self, name, type_, direction, ispec_data)
         
         self.bind_to_property = bind_to_property
 

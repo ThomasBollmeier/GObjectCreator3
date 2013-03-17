@@ -54,7 +54,9 @@ class AstVisitor(object):
                           name, 
                           attributes,
                           parameters,
-                          prop_inits
+                          prop_inits,
+                          ispec_data = None,
+                          ispec_data_params = None
                           ):
         pass
         
@@ -62,12 +64,16 @@ class AstVisitor(object):
                      name, 
                      attributes,
                      parameters,
+                     ispec_data = None,
+                     ispec_data_params = None
                      ):
         pass
         
     def visit_interface_method(self,
                                name,
-                               parameters
+                               parameters,
+                               ispec_data = None,
+                               ispec_data_params = None
                                ):
         pass
     

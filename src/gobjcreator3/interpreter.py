@@ -3,6 +3,8 @@ from gobjcreator3.parameter import BuiltIn, FullTypeName, ListOf, RefTo
 from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
+from gobjcreator3.introspection import ISpecMethod, ISpecParam, \
+Transfer, OutAlloc
  
 class Interpreter(object):
     
@@ -166,8 +168,18 @@ class Interpreter(object):
         name = method['name'].getText()
         
         parameters = self._get_method_parameters(method)
-            
-        visitor.visit_interface_method(name, parameters)
+        
+        props = method['properties']
+        if props and props['skip']:
+            ispec_data = ISpecMethod()
+            ispec_data.skip = True
+        else:
+            ispec_data = None
+                    
+        visitor.visit_interface_method(name, 
+                                       parameters,
+                                       ispec_data
+                                       )
         
     def _eval_gerror(self, ast, visitor):
         
@@ -247,10 +259,21 @@ class Interpreter(object):
         attributes["final"] = props and props["final"] and True or False
         attributes["constructor"] = is_constructor
         
+        # Introspection:
+        if props and props["skip"]:
+            ispec_data = ISpecMethod()
+            ispec_data.skip = True
+        else:
+            ispec_data = None
+        
         parameters_and_inits = self._get_method_parameters(ast, is_constructor)
         if not is_constructor:
             parameters = parameters_and_inits
-            visitor.visit_method(name, attributes, parameters)
+            visitor.visit_method(name, 
+                                 attributes, 
+                                 parameters,
+                                 ispec_data
+                                 )
         else:
             parameters = []
             prop_inits = []
@@ -259,7 +282,12 @@ class Interpreter(object):
                     parameters.append(elem)
                 else:
                     prop_inits.append(elem)
-            visitor.visit_constructor(name, attributes, parameters, prop_inits)
+            visitor.visit_constructor(name, 
+                                      attributes, 
+                                      parameters, 
+                                      prop_inits,
+                                      ispec_data
+                                      )
         
     def _get_method_parameters(self, method, is_constructor=False):
         
@@ -307,16 +335,51 @@ class Interpreter(object):
                             
             props = child["properties"]
             if props:
+                ispec_data = None
                 for p in props.getChildren():
+                    
                     param_prop_name = p.getName()
-                    param.properties[param_prop_name] = {
-                                                         "const" : True
-                                                         }[param_prop_name]
-                
-            parameters.append(param)
+                    
+                    if param_prop_name == "const":
+                        param.properties[param_prop_name] = True
+                        continue
+                    
+                    if param_prop_name in ["transfer", 
+                                           "out_alloc",
+                                           "allow_none",
+                                           "callback",
+                                           "user_data",
+                                           "array",
+                                           "array_element"
+                                           ]:
+                        
+                        if ispec_data is None:
+                            ispec_data = ISpecParam()
+                    
+                    if param_prop_name == "transfer":
+                        ispec_data.transfer = {
+                                               "none": Transfer.NONE,
+                                               "container": Transfer.CONTAINER,
+                                               "full": Transfer.FULL
+                                               }[p.getText()]
+                    elif param_prop_name == "out_alloc":
+                        ispec_data.out_alloc = {
+                                                "caller": OutAlloc.CALLER,
+                                                "callee": OutAlloc.CALLEE
+                                                }[p.getText()]
+                    elif param_prop_name == "allow_none":
+                        ispec_data.allow_none = True
+                    elif param_prop_name == "callback":
+                        pass
+                    elif param_prop_name == "user_data":
+                        pass
+                    elif param_prop_name == "array":
+                        pass
+                    elif param_prop_name == "array_element":
+                        pass
             
         return parameters
-        
+         
     def _eval_attr_section(self, ast, visitor):
         
         visibility = self._visi_map[ast["visibility"].getText()]
