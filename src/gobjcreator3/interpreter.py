@@ -4,7 +4,7 @@ from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCode
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
 from gobjcreator3.introspection import ISpecMethod, ISpecParam, \
-Transfer, OutAlloc
+Transfer, OutAlloc, Callback, Scope
  
 class Interpreter(object):
     
@@ -370,13 +370,27 @@ class Interpreter(object):
                     elif param_prop_name == "allow_none":
                         ispec_data.allow_none = True
                     elif param_prop_name == "callback":
-                        pass
+                        ispec_data.callback = Callback()
+                        user_data_param = p["user_data_param"]
+                        if user_data_param:
+                            ispec_data.callback.user_data_param = user_data_param.getText()
+                        scope = p["scope"]
+                        if scope:
+                            ispec_data.callback.scope = {
+                                                         "call": Scope.CALL,
+                                                         "async": Scope.ASYNC,
+                                                         "notified": Scope.NOTIFIED
+                                                         }[scope.getText()]
                     elif param_prop_name == "user_data":
-                        pass
+                        if p["user_data"]:
+                            ispec_data.user_data = True
                     elif param_prop_name == "array":
                         pass
                     elif param_prop_name == "array_element":
                         pass
+                    
+                if ispec_data is not None:
+                    param.properties["ispec_data"] = ispec_data
             
         return parameters
          

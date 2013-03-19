@@ -6,6 +6,7 @@ dist_gobjcreator3_DATA = \
 	ast_visitor.py \
 	compiler.py \
 	interpreter.py \
+	introspection.py \
 	misc.py \
 	parameter.py \
 	parser.py \

@@ -365,7 +365,8 @@ class CompileStep1(AstVisitor):
                           name, 
                           attributes,
                           parameters,
-                          prop_inits
+                          prop_inits,
+                          ispec_data
                           ):
         
         constructor = ConstructorMethod()
@@ -387,7 +388,8 @@ class CompileStep1(AstVisitor):
     def visit_method(self, 
                      name, 
                      attributes,
-                     parameters 
+                     parameters,
+                     ispec_data
                      ):
         
         method = Method(name)
@@ -409,7 +411,8 @@ class CompileStep1(AstVisitor):
             
     def visit_interface_method(self,
                                name,
-                               parameters
+                               parameters,
+                               ispec_data
                                ):
         
         method = Method(name)

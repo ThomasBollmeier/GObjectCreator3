@@ -33,7 +33,8 @@ class CompilerTest(unittest.TestCase):
 
         worker = demo.get_object("Worker")
         print([(i.get_fullname(), i.filepath_origin) for i in worker.interfaces])
-        method = worker.get_method("get_team_members")
+        method_info = worker.get_method_info("get_team_members")
+        method = method_info.method
         print("Static: %s" % method.is_static)
         print("Final: %s" % method.is_final)
         for p in method.parameters:
