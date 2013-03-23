@@ -9,6 +9,7 @@ dist_model_DATA = \
 	ginterface.py \
 	gobject.py \
 	__init__.py \
+	introspection.py \
 	method.py \
 	module.py \
 	property.py \

@@ -1,13 +1,26 @@
 
 class MethodIntroData(object):
     
-    def __init__(self, method_name, skip=False):
+    def __init__(self):
         
-        self.method_name = method_name
-        self.skip = skip
+        self.skip = False
 
 class ParamIntroData(object):
     
-    def __init__(self, param_name):
+    def __init__(self):
         
-        self.param_name = param_name 
+        self.transfer = None
+        self.out_alloc = None
+        self.allow_none = None
+        self.callback = None
+        self.user_data = None
+        self.array = None
+        self.array_element = None
+
+class ArrayElementIntroData(object):
+    
+    def __init__(self):
+        
+        self.type = None
+        self.key_type = None
+        self.value_type = None

@@ -4,7 +4,7 @@ from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCode
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
 from gobjcreator3.introspection import ISpecMethod, ISpecParam, \
-Transfer, OutAlloc, Callback, Scope
+Transfer, OutAlloc, Callback, Scope, Array, ArrayElement
  
 class Interpreter(object):
     
@@ -332,7 +332,9 @@ class Interpreter(object):
             else:
                 bind_to_property = bind_to_node and bind_to_node.getText() or ""
                 param = ConstructorParam(pname, argtype, category, bind_to_property)
-                            
+                
+            parameters.append(param)
+                
             props = child["properties"]
             if props:
                 ispec_data = None
@@ -385,13 +387,29 @@ class Interpreter(object):
                         if p["user_data"]:
                             ispec_data.user_data = True
                     elif param_prop_name == "array":
-                        pass
+                        array = Array()
+                        fixed_size = p["fixed_size"]
+                        if fixed_size:
+                            array.fixed_size = int(fixed_size.getText())
+                        length_param = p["length_param"]
+                        if length_param:
+                            array.length_param = length_param.getText()
+                        if p["zero_terminated"]:
+                            array.zero_terminated = True
+                        ispec_data.array = array
                     elif param_prop_name == "array_element":
-                        pass
+                        array_elem = ArrayElement()
+                        children = p.getChildren()
+                        if len(children) == 1:
+                            array_elem.type = self._eval_type(children[0])
+                        else:
+                            array_elem.key_type = self._eval_type(children[0])
+                            array_elem.value_type = self._eval_type(children[1])
+                        ispec_data.array_element = array_elem
                     
                 if ispec_data is not None:
-                    param.properties["ispec_data"] = ispec_data
-            
+                    param.properties["ispec_data"] = ispec_data 
+                        
         return parameters
          
     def _eval_attr_section(self, ast, visitor):
@@ -510,10 +528,17 @@ class Interpreter(object):
         elif name == "list":
             element_type = self._eval_arg_type(argtype_node.getChildren()[0])
             return ListOf(element_type)
-        elif name == "full_type_name":
-            return self._eval_full_type_name(argtype_node)
+        else:
+            return self._eval_type(argtype_node)
+        
+    def _eval_type(self, type_node):
+
+        name = type_node.getName()
+        
+        if name == "full_type_name":
+            return self._eval_full_type_name(type_node)
         elif name == "builtin_type":
-            return BuiltIn(argtype_node.getText())
+            return BuiltIn(type_node.getText())
         else:
             raise Exception("Unknown type %s" % name)
         

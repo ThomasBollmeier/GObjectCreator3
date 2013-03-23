@@ -178,7 +178,11 @@ module demo
 				<-> error: ref(ref(GError))
 				-> boolean;
 			get_team_members [static]
-				-> list(company/Employee);
+				-> list(company/Employee) [
+					transfer-none,
+					array, 
+					array-element(type=company/Employee)
+					];
 
 		}
 		
