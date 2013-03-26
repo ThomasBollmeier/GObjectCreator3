@@ -1,3 +1,4 @@
+:> include "introspection.template"
 :> snippet method_implementation(class, prefix, method_info)
 
 	:> define method = method_info[0]
@@ -13,6 +14,9 @@
 	:> if [ method.visibility == PRIVATE or not method.is_final ] then begin
 static ${method_result(method)}
 	:> else
+		:> if [ method.is_final ] then begin
+:> paste snippet method_introspection(method)
+		:> endif
 ${method_result(method)}
 	:> endif	
 	:> if [ not method.is_final ] then begin
@@ -42,6 +46,7 @@ ${prefix}_${basename} (${method_signature(clif, method, FALSE, TRUE, 1)})
 	:> endif
 	
 	:> if [ is_empty(intf) ] then begin
+:> paste snippet method_introspection(method)
 ${method_result(method)}	
 	:> else
 static ${method_result(method)}
@@ -89,6 +94,7 @@ ${prefix}_${basename}_im (${method_signature(clif, method, FALSE, TRUE, 1)})
 
 	:> define section_name = method.name
 	
+:> paste snippet method_introspection(method)
 ${method_result(method)}
 ${prefix}_${method.name} (${method_signature(intf, method, FALSE, TRUE, 1)})
 {

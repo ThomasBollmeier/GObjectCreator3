@@ -309,6 +309,10 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["method_def_class"] = self._method_def_class
         self._template_processor["method_def_class_cast"] = self._method_def_class_cast
         
+        self._template_processor["IN"] = Parameter.IN
+        self._template_processor["IN_OUT"] = Parameter.IN_OUT
+        self._template_processor["OUT"] = Parameter.OUT
+                
     def _setup_module_symbols(self, module):
         
         camel_case_prefix = module.name.capitalize()

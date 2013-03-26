@@ -1,0 +1,15 @@
+:> snippet method_introspection(method)
+/**
+	:> if [ not is_empty(method.ispec_data) and method.ispec_data.skip ] then begin
+ * ${method.name}: (skip)
+ 	:> else
+ * ${method.name}: ...
+ 	:> endif
+ 	:> for each param in method.parameters where param.direction <> OUT do
+ * @${param.name}: ...
+ 	:> done
+ 	:> for each param in method.parameters where param.direction == OUT do
+ * Returns: ...
+ 	:> done
+ */
+:> endsnippet

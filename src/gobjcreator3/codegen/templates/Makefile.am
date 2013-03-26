@@ -12,6 +12,7 @@ templates_PYTHON = \
 	c/gobject_header.template \
 	c/gobject_source.template \
 	c/interfaces.template \
+	c/introspection.template \
 	c/marshaller_header.template \
 	c/marshaller_source.template \
 	c/methods.template \
