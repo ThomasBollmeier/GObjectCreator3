@@ -7,6 +7,7 @@ from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.method import Parameter
 from gobjcreator3.model.property import PropType, PropAccess
 from gobjcreator3.model.ginterface import GInterface
+from gobjcreator3.introspection import Transfer, OutAlloc
 import os
 import re
 import faberscriptorum
@@ -312,6 +313,7 @@ class CCodeGenerator(CodeGenerator):
         self._template_processor["IN"] = Parameter.IN
         self._template_processor["IN_OUT"] = Parameter.IN_OUT
         self._template_processor["OUT"] = Parameter.OUT
+        self._template_processor["introspec_param_info"] = self._introspec_param_info
                 
     def _setup_module_symbols(self, module):
         
@@ -444,7 +446,44 @@ class CCodeGenerator(CodeGenerator):
     def _increment(self, value):
         
         return value + 1
+    
+    def _introspec_param_info(self, param):
         
+        ispec_data = param.ispec_data
+        
+        if param.direction == Parameter.IN:
+            res = "(in)"
+        elif param.direction == Parameter.IN_OUT:
+            res = "(inout)"
+        elif param.direction == Parameter.OUT:
+            if ispec_data is None or ispec_data.out_alloc is None:
+                res = "(out)"
+            else:
+                if ispec_data.out_alloc == OutAlloc.CALLEE:
+                    res = "(out callee-allocates)"
+                elif ispec_data.out_alloc == OutAlloc.CALLER:
+                    res = "(out caller-allocates)"
+                else:
+                    res = "(out)"
+                    
+        if ispec_data is None:
+            return res
+        
+        if ispec_data.transfer is not None:
+            res += " "
+            res += {
+                    Transfer.NONE: "(transfer none)",
+                    Transfer.FULL: "(transfer full)",
+                    Transfer.CONTAINER: "(transfer container)"
+                    }[ispec_data.transfer]
+                    
+        if ispec_data.allow_none is not None:
+            res += " "
+            if ispec_data.allow_none:
+                res += "(allow-none)"
+        
+        return res
+                
     def _is_empty(self, data):
         
         return bool(data) == False
