@@ -17,16 +17,14 @@ function split () {
 	
 }
 
-bovinus_info=`bovinus --version 2>/dev/null`
-if [ -z "$bovinus_info" ]; then
-	echo ""
-	exit 2
-fi
-
 #
 # Get installed bovinus version:
 #
-bovinus_version=`echo $bovinus_info | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+'`
+bovinus_version=`python -c "import bovinus; print(bovinus.VERSION)" 2>/dev/null`
+if [ -z "$bovinus_version" ]; then
+	echo ""
+	exit 2
+fi
 
 declare -a installed_version
 installed_version=($(split $bovinus_version))
