@@ -120,7 +120,7 @@ class TestVisitor(AstVisitor):
             self._write(code)
         self._dedent()
 
-    def visit_constructor(self, name, attrs, parameters, prop_inits):
+    def visit_constructor(self, name, attrs, parameters, prop_inits, ispec_data):
 
         self._write("Constructor")
         self._indent()
@@ -145,7 +145,7 @@ class TestVisitor(AstVisitor):
             
         self._dedent()
 
-    def visit_method(self, name, attrs, parameters):
+    def visit_method(self, name, attrs, parameters, ispec_data):
 
         self._write("Method: %s" % name)
         self._indent()
@@ -163,7 +163,7 @@ class TestVisitor(AstVisitor):
             self._dedent()
         self._dedent()
         
-    def visit_interface_method(self, name, parameters):
+    def visit_interface_method(self, name, parameters, ispec_data):
         
         self._write("Method: %s" % name)
         self._indent()

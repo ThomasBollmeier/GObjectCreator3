@@ -17,6 +17,7 @@ from gobjcreator3.model.method import Method, Parameter
 from gobjcreator3.model.method import ConstructorMethod, ConstructorParam, PropertyInit
 from gobjcreator3.model.attribute import Attribute
 from gobjcreator3.model.visibility import Visibility
+from gobjcreator3.model.introspection import MethodIntroData, ParamIntroData, ArrayElementIntroData
 
 class Compiler(object):
     
@@ -273,11 +274,37 @@ class CompileStep1(AstVisitor):
             
             if "const" in param.properties:
                 param_obj.modifiers.append("const")
-                                 
+                
+            if "ispec_data" in param.properties:
+                introspec = param.properties["ispec_data"]
+                param_obj.ispec_data = self._get_param_ispec_data(introspec)
+                                                 
             res.append(param_obj)
             
         return res
     
+    def _get_param_ispec_data(self, introspec):
+        
+        res = ParamIntroData()
+        
+        res.transfer = introspec.transfer
+        res.out_alloc = introspec.out_alloc
+        res.allow_none = introspec.allow_none
+        res.callback = introspec.callback
+        res.user_data = introspec.user_data
+        res.array = introspec.array
+        
+        if introspec.array_element is not None:
+            elem = introspec.array_element
+            res.array_element = ArrayElementIntroData()
+            if elem.type is not None:
+                res.array_element.type = self._get_type(elem.type)
+            if elem.key_type is not None:
+                res.array_element.key_type = self._get_type(elem.key_type)
+                res.array_element.value_type = self._get_type(elem.value_type)
+                    
+        return res
+                    
     def _get_constructor_parameters(self, cls, method_name, parameters):
 
         res = []
@@ -297,6 +324,10 @@ class CompileStep1(AstVisitor):
             
             if "const" in param.properties:
                 param_obj.modifiers.append("const")
+                
+            if "ispec_data" in param.properties:
+                introspec = param.properties["ispec_data"]
+                param_obj.ispec_data = self._get_param_ispec_data(introspec)
 
             res.append(param_obj)
 
@@ -365,7 +396,8 @@ class CompileStep1(AstVisitor):
                           name, 
                           attributes,
                           parameters,
-                          prop_inits
+                          prop_inits,
+                          ispec_data
                           ):
         
         constructor = ConstructorMethod()
@@ -382,12 +414,17 @@ class CompileStep1(AstVisitor):
             
             constructor.prop_inits.append(PropertyInit(prop_name, prop_value))
                         
+        if ispec_data is not None:
+            constructor.ispec_data = MethodIntroData()
+            constructor.ispec_data.skip = ispec_data.skip
+                        
         self._gobject.add_constructor(constructor)
                     
     def visit_method(self, 
                      name, 
                      attributes,
-                     parameters 
+                     parameters,
+                     ispec_data
                      ):
         
         method = Method(name)
@@ -405,11 +442,16 @@ class CompileStep1(AstVisitor):
             
         method.parameters = self._get_parameters(name, parameters)
         
+        if ispec_data is not None:
+            method.ispec_data = MethodIntroData()
+            method.ispec_data.skip = ispec_data.skip
+        
         self._gobject.add_method(method)
             
     def visit_interface_method(self,
                                name,
-                               parameters
+                               parameters,
+                               ispec_data
                                ):
         
         method = Method(name)
@@ -417,6 +459,10 @@ class CompileStep1(AstVisitor):
         method.set_abstract()
         
         method.parameters = self._get_parameters(name, parameters)
+        
+        if ispec_data is not None:
+            method.ispec_data = MethodIntroData()
+            method.ispec_data.skip = ispec_data.skip
         
         self._ginterface.add_method(method)
     

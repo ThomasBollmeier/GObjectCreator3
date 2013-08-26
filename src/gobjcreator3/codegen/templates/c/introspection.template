@@ -1,0 +1,18 @@
+:> snippet method_introspection(method, clif)
+/**
+	:> if [ not is_empty(method.ispec_data) and method.ispec_data.skip ] then begin
+ * ${method.name}: (skip)
+ 	:> else
+ * ${method.name}: ...
+ 	:> endif
+ 	:> if [ not method.is_static ] then begin
+ * @self: (in): an instance of #${type_name(clif)}
+ 	:> endif
+ 	:> for each param in method.parameters where param.direction <> OUT do
+ * @${param.name}: ${introspec_param_info(param)}
+ 	:> done
+ 	:> for each param in method.parameters where param.direction == OUT do
+ * Returns: ...
+ 	:> done
+ */
+:> endsnippet

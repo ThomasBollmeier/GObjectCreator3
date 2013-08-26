@@ -3,6 +3,8 @@ from gobjcreator3.parameter import BuiltIn, FullTypeName, ListOf, RefTo
 from gobjcreator3.misc import PropGTypeInfo, PropValue, PropNumberInfo, PropCodeInfo
 from gobjcreator3.model.visibility import Visibility
 from gobjcreator3.model.property import PropType, PropAccess
+from gobjcreator3.introspection import ISpecMethod, ISpecParam, \
+Transfer, OutAlloc, Callback, Scope, Array, ArrayElement
  
 class Interpreter(object):
     
@@ -166,8 +168,18 @@ class Interpreter(object):
         name = method['name'].getText()
         
         parameters = self._get_method_parameters(method)
-            
-        visitor.visit_interface_method(name, parameters)
+        
+        props = method['properties']
+        if props and props['skip']:
+            ispec_data = ISpecMethod()
+            ispec_data.skip = True
+        else:
+            ispec_data = None
+                    
+        visitor.visit_interface_method(name, 
+                                       parameters,
+                                       ispec_data
+                                       )
         
     def _eval_gerror(self, ast, visitor):
         
@@ -247,10 +259,21 @@ class Interpreter(object):
         attributes["final"] = props and props["final"] and True or False
         attributes["constructor"] = is_constructor
         
+        # Introspection:
+        if props and props["skip"]:
+            ispec_data = ISpecMethod()
+            ispec_data.skip = True
+        else:
+            ispec_data = None
+        
         parameters_and_inits = self._get_method_parameters(ast, is_constructor)
         if not is_constructor:
             parameters = parameters_and_inits
-            visitor.visit_method(name, attributes, parameters)
+            visitor.visit_method(name, 
+                                 attributes, 
+                                 parameters,
+                                 ispec_data
+                                 )
         else:
             parameters = []
             prop_inits = []
@@ -259,7 +282,12 @@ class Interpreter(object):
                     parameters.append(elem)
                 else:
                     prop_inits.append(elem)
-            visitor.visit_constructor(name, attributes, parameters, prop_inits)
+            visitor.visit_constructor(name, 
+                                      attributes, 
+                                      parameters, 
+                                      prop_inits,
+                                      ispec_data
+                                      )
         
     def _get_method_parameters(self, method, is_constructor=False):
         
@@ -304,19 +332,86 @@ class Interpreter(object):
             else:
                 bind_to_property = bind_to_node and bind_to_node.getText() or ""
                 param = ConstructorParam(pname, argtype, category, bind_to_property)
-                            
-            props = child["properties"]
-            if props:
-                for p in props.getChildren():
-                    param_prop_name = p.getName()
-                    param.properties[param_prop_name] = {
-                                                         "const" : True
-                                                         }[param_prop_name]
                 
             parameters.append(param)
-            
+                
+            props = child["properties"]
+            if props:
+                ispec_data = None
+                for p in props.getChildren():
+                    
+                    param_prop_name = p.getName()
+                    
+                    if param_prop_name == "const":
+                        param.properties[param_prop_name] = True
+                        continue
+                    
+                    if param_prop_name in ["transfer", 
+                                           "out_alloc",
+                                           "allow_none",
+                                           "callback",
+                                           "user_data",
+                                           "array",
+                                           "array_element"
+                                           ]:
+                        
+                        if ispec_data is None:
+                            ispec_data = ISpecParam()
+                    
+                    if param_prop_name == "transfer":
+                        ispec_data.transfer = {
+                                               "none": Transfer.NONE,
+                                               "container": Transfer.CONTAINER,
+                                               "full": Transfer.FULL
+                                               }[p.getText()]
+                    elif param_prop_name == "out_alloc":
+                        ispec_data.out_alloc = {
+                                                "caller": OutAlloc.CALLER,
+                                                "callee": OutAlloc.CALLEE
+                                                }[p.getText()]
+                    elif param_prop_name == "allow_none":
+                        ispec_data.allow_none = True
+                    elif param_prop_name == "callback":
+                        ispec_data.callback = Callback()
+                        user_data_param = p["user_data_param"]
+                        if user_data_param:
+                            ispec_data.callback.user_data_param = user_data_param.getText()
+                        scope = p["scope"]
+                        if scope:
+                            ispec_data.callback.scope = {
+                                                         "call": Scope.CALL,
+                                                         "async": Scope.ASYNC,
+                                                         "notified": Scope.NOTIFIED
+                                                         }[scope.getText()]
+                    elif param_prop_name == "user_data":
+                        if p["user_data"]:
+                            ispec_data.user_data = True
+                    elif param_prop_name == "array":
+                        array = Array()
+                        fixed_size = p["fixed_size"]
+                        if fixed_size:
+                            array.fixed_size = int(fixed_size.getText())
+                        length_param = p["length_param"]
+                        if length_param:
+                            array.length_param = length_param.getText()
+                        if p["zero_terminated"]:
+                            array.zero_terminated = True
+                        ispec_data.array = array
+                    elif param_prop_name == "array_element":
+                        array_elem = ArrayElement()
+                        children = p.getChildren()
+                        if len(children) == 1:
+                            array_elem.type = self._eval_type(children[0])
+                        else:
+                            array_elem.key_type = self._eval_type(children[0])
+                            array_elem.value_type = self._eval_type(children[1])
+                        ispec_data.array_element = array_elem
+                    
+                if ispec_data is not None:
+                    param.properties["ispec_data"] = ispec_data 
+                        
         return parameters
-        
+         
     def _eval_attr_section(self, ast, visitor):
         
         visibility = self._visi_map[ast["visibility"].getText()]
@@ -433,10 +528,17 @@ class Interpreter(object):
         elif name == "list":
             element_type = self._eval_arg_type(argtype_node.getChildren()[0])
             return ListOf(element_type)
-        elif name == "full_type_name":
-            return self._eval_full_type_name(argtype_node)
+        else:
+            return self._eval_type(argtype_node)
+        
+    def _eval_type(self, type_node):
+
+        name = type_node.getName()
+        
+        if name == "full_type_name":
+            return self._eval_full_type_name(type_node)
         elif name == "builtin_type":
-            return BuiltIn(argtype_node.getText())
+            return BuiltIn(type_node.getText())
         else:
             raise Exception("Unknown type %s" % name)
         
